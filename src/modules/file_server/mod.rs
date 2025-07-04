@@ -1,41 +1,35 @@
-//! Static File Server Module
+//!
 
 use std::path::PathBuf;
 
-use anyhow::Result;
-use axum::{Router, body::Body, extract::Request, response::Response};
 use serde::Deserialize;
-use tower_http::services::ServeDir;
 
-mod resolve;
+use crate::config::Config;
 
-use super::Module;
-use crate::config::{Config, DirectiveCfg};
+mod error;
+mod factory;
+mod path_buf;
+mod service;
 
-//TODO: implement fallback handler for default?
-//TODO: implement support for dynamic status-code handlers?
+//TODO: directive/module controls over passing to next for specified status-codes
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
-pub struct FSModule {
+pub struct FileServerConfig {
     root: Option<PathBuf>,
-    try_files: Vec<String>,
+    hidden_files: bool,
 }
 
-impl Module for FSModule {
-    fn enable(&self, cfg: &Config, dir: &DirectiveCfg, mut router: Router) -> Result<Router> {
-        let root = cfg
+impl FileServerConfig {
+    pub fn into_factory(&self, cfg: &Config) -> factory::FileServer {
+        let index = cfg.index.clone().unwrap_or_default();
+        let root = self
             .root
             .clone()
-            .or(self.root.clone())
+            .or(cfg.root.clone())
             .unwrap_or_else(|| PathBuf::from("."));
-
-        for location in dir.locations() {
-            log::debug!("configuring file_server for {location:?} -> {root:?}");
-            let indexes = cfg.index.clone().unwrap_or_default();
-            let server = resolve::SmartServeDir::new(&root, &self.try_files, indexes);
-            router = router.nest_service(&location, server);
-        }
-        Ok(router)
+        factory::FileServer::new("", root)
+            .directory_index(index)
+            .hidden_files(self.hidden_files)
     }
 }

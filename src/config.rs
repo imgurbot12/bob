@@ -5,7 +5,7 @@ use std::{path::PathBuf, str::FromStr};
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, de::Error};
 
-use crate::modules::*;
+use crate::modules::ModulesConfig;
 
 //TODO: add dynamic server-name match using glob
 //TODO: add dynamic location matcher that compiles to tower routes?
@@ -24,7 +24,7 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<Config>> {
     Ok(configs)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub listen: Vec<ListenCfg>,
     pub server_name: Vec<DomainMatch>,
@@ -34,7 +34,7 @@ pub struct Config {
     pub index: Option<Vec<PathBuf>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ListenCfg {
     pub port: u16,
     pub host: Option<String>,
@@ -47,39 +47,24 @@ pub struct DomainMatch {
     pub glob: glob::Pattern,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SSLCfg {
     pub certificate: PathBuf,
     pub certificate_key: PathBuf,
     pub dhparam: Option<PathBuf>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct DirectiveCfg {
     pub location: Option<String>,
     pub locations: Vec<String>,
-    pub modules: Vec<ModuleCfg>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "module")]
-pub enum ModuleCfg {
-    #[cfg(feature = "fs")]
-    #[serde(alias = "file_server")]
-    FileServer(FSModule),
-    #[cfg(feature = "rev_proxy")]
-    #[serde(alias = "proxy")]
-    ReverseProxy(RevProxyModule),
+    pub modules: Vec<ModulesConfig>,
 }
 
 impl ListenCfg {
-    pub fn address(&self) -> String {
-        format!(
-            "{}:{}",
-            self.host.as_ref().map(|s| s.as_str()).unwrap_or("0.0.0.0"),
-            self.port
-        )
+    pub fn host(&self) -> &str {
+        self.host.as_ref().map(|s| s.as_str()).unwrap_or("0.0.0.0")
     }
 }
 
@@ -90,17 +75,6 @@ impl DirectiveCfg {
             locations.insert(0, location);
         }
         locations
-    }
-}
-
-impl ModuleCfg {
-    pub fn module(self) -> Box<dyn Module> {
-        match self {
-            #[cfg(feature = "fs")]
-            Self::FileServer(fs) => Box::new(fs),
-            #[cfg(feature = "rev_proxy")]
-            Self::ReverseProxy(rp) => Box::new(rp),
-        }
     }
 }
 

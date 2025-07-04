@@ -5,23 +5,23 @@ edition = "2024"
 
 [features]
 default   = ['fs', 'rev_proxy']
-fs        = ['http-body']
-rev_proxy = ['hyper', 'hyper-util']
-bytes = []
-http-body = ["dep:http-body"]
+fs        = ['dep:actix-utils', 'dep:actix-files', 'dep:derive_more', 'dep:percent-encoding']
+rev_proxy = ['dep:hyper', 'dep:hyper-util']
 
 [dependencies]
+actix-files = { version = "0.6.6", optional = true }
+actix-service = "2.0.3"
+actix-utils = { version = "3.0.1", optional = true }
+actix-web = "4.11.0"
 anyhow = "1.0.98"
-axum = "0.8.4"
 clap = { version = "4.5.40", features = ["derive"] }
+derive_more = { version = "2.0.1", optional = true, features = ["display"] }
 env_logger = "0.11.8"
+futures-core = "0.3.31"
 glob = "0.3.2"
-http-body = { version = "1.0.1", optional = true }
 hyper = { version = "1.6.0", features = ["client", "http1", "http2"], optional = true }
 hyper-util = { version = "0.1.14", features = ["client-legacy", "http1", "http2"], optional = true }
 log = "0.4.27"
+percent-encoding = { version =  "2.3.1", optional = true }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.34"
-tokio = { version = "1.45.1", features = ["full"] }
-tower = { version = "0.5.2", features = ["full", "make"] }
-tower-http = { version = "0.6.6", features = ["fs", "trace"] }
