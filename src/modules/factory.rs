@@ -1,4 +1,4 @@
-//!
+//! Actix-Web Service Factory for Sequential Modules
 
 use std::rc::Rc;
 
@@ -10,14 +10,16 @@ use actix_web::{
 };
 use futures_core::future::LocalBoxFuture;
 
-use super::service::{ModuleService, ModuleServiceInner};
-use crate::modules::service::*;
+use super::service::*;
+use super::utils::impl_http_service;
 
 #[derive(Clone)]
 pub struct ModuleSvc {
     mount_path: String,
     modules: Vec<Rc<HttpNewService>>,
     guards: Vec<Rc<dyn Guard>>,
+    body_buffer_size: usize,
+    body_max_size: usize,
 }
 
 impl ModuleSvc {
@@ -26,6 +28,8 @@ impl ModuleSvc {
             mount_path: mount_path.to_owned(),
             modules: Vec::new(),
             guards: Vec::new(),
+            body_buffer_size: 32 * 1024, // 32 kb default
+            body_max_size: 32 * 1024,
         }
     }
     pub fn add_guard<G: Guard + 'static>(&mut self, guards: G) {
@@ -43,29 +47,7 @@ impl ModuleSvc {
     }
 }
 
-impl HttpServiceFactory for ModuleSvc {
-    fn register(mut self, config: &mut AppService) {
-        let guards = if self.guards.is_empty() {
-            None
-        } else {
-            let guards = std::mem::take(&mut self.guards);
-            Some(
-                guards
-                    .into_iter()
-                    .map(|guard| -> Box<dyn Guard> { Box::new(guard) })
-                    .collect::<Vec<_>>(),
-            )
-        };
-
-        let rdef = if config.is_root() {
-            ResourceDef::root_prefix(&self.mount_path)
-        } else {
-            ResourceDef::prefix(&self.mount_path)
-        };
-
-        config.register_service(rdef, guards, self, None)
-    }
-}
+impl_http_service!(ModuleSvc);
 
 impl ServiceFactory<ServiceRequest> for ModuleSvc {
     type Response = ServiceResponse;
@@ -76,7 +58,11 @@ impl ServiceFactory<ServiceRequest> for ModuleSvc {
     type Future = LocalBoxFuture<'static, Result<Self::Service, Self::InitError>>;
 
     fn new_service(&self, _: ()) -> Self::Future {
-        let mut inner = ModuleServiceInner { modules: vec![] };
+        let mut inner = ModuleServiceInner {
+            modules: vec![],
+            body_buffer_size: self.body_buffer_size,
+            body_max_size: self.body_max_size,
+        };
         let futures: Vec<_> = self.modules.iter().map(|m| m.new_service(())).collect();
         Box::pin(async {
             let mut modules = vec![];

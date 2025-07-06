@@ -3,14 +3,16 @@
 use std::{ops::Deref, rc::Rc};
 
 use actix_web::{
-    body::BoxBody,
+    FromRequest,
+    body::{self, BoxBody},
     dev::{self, Service, ServiceRequest, ServiceResponse},
     error::Error,
     guard::Guard,
 };
 use futures_core::future::LocalBoxFuture;
 
-use crate::modules::{guard::Location, utils::default_response};
+use crate::modules::guard::Location;
+use crate::modules::utils::{check_guards, check_locations, default_response};
 
 #[derive(Clone)]
 pub struct ProxyService(pub(crate) Rc<ProxyServiceInner>);
@@ -36,22 +38,24 @@ impl Service<ServiceRequest> for ProxyService {
     dev::always_ready!();
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        // skip processing if locations/guards do not match
         let ctx = req.guard_ctx();
-        let allow = self.guards.is_empty() || self.guards.iter().any(|g| (**g).check(&ctx));
-        let location = self.locations.iter().find_map(|l| (**l).check(&ctx));
+        let url_path = check_locations!(req, &ctx, self.locations);
+        check_guards!(req, &ctx, self.guards);
 
         let this = self.clone();
         Box::pin(async move {
-            if !allow {
-                return Ok(default_response(req));
-            }
-            let url_path = match location {
-                Some(loc) => loc,
-                None if this.locations.is_empty() => req.path().to_owned(),
-                None => return Ok(default_response(req)),
-            };
-
             println!("rev_proxy {url_path:?}");
+
+            let (req, mut payload) = req.into_parts();
+            let pl = actix_web::web::Payload::from_request(&req, &mut payload)
+                .await
+                .unwrap();
+
+            let content = pl.to_bytes().await;
+            println!("content: {content:?}");
+
+            let req = ServiceRequest::from_parts(req, payload);
             Ok(default_response(req))
         })
     }

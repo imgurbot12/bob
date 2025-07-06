@@ -8,11 +8,13 @@ use actix_web::{
     dev::{self, Service, ServiceRequest, ServiceResponse},
     error::Error,
     guard::Guard,
+    http::Method,
 };
 use futures_core::future::LocalBoxFuture;
 
 use super::path_buf::PathBufWrap;
-use crate::modules::{guard::Location, utils::default_response};
+use crate::modules::guard::Location;
+use crate::modules::utils::{check_guards, check_locations, default_response};
 
 #[derive(Clone)]
 pub struct FileService(pub(crate) Rc<FileServiceInner>);
@@ -49,21 +51,18 @@ impl Service<ServiceRequest> for FileService {
     dev::always_ready!();
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        // skip processing if not a GET/HEAD
+        if !matches!(*req.method(), Method::HEAD | Method::GET) {
+            return Box::pin(async move { Ok(default_response(req)) });
+        }
+
+        // skip processing if locations/guards do not match
         let ctx = req.guard_ctx();
-        let allow = self.guards.is_empty() || self.guards.iter().any(|g| (**g).check(&ctx));
-        let location = self.locations.iter().find_map(|l| (**l).check(&ctx));
+        let url_path = check_locations!(req, &ctx, self.locations);
+        check_guards!(req, &ctx, self.guards);
 
         let this = self.clone();
         Box::pin(async move {
-            if !allow {
-                return Ok(default_response(req));
-            }
-            let url_path = match location {
-                Some(loc) => loc,
-                None if this.locations.is_empty() => req.path().to_owned(),
-                None => return Ok(default_response(req)),
-            };
-
             let path_on_disk = match PathBufWrap::parse_path(&url_path, this.hidden_files) {
                 Ok(item) => item,
                 Err(err) => return Ok(req.error_response(err)),

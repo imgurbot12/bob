@@ -24,7 +24,8 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<Config>> {
     Ok(configs)
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
 pub struct Config {
     pub listen: Vec<ListenCfg>,
     pub server_name: Vec<DomainMatch>,
@@ -32,6 +33,9 @@ pub struct Config {
     // file server global options
     pub root: Option<PathBuf>,
     pub index: Option<Vec<PathBuf>>,
+    // body buffering options
+    body_buffer_size: Option<usize>,
+    max_body_size: Option<usize>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
