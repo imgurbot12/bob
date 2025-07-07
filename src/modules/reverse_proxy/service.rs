@@ -3,14 +3,15 @@
 use std::{ops::Deref, rc::Rc};
 
 use actix_web::{
-    FromRequest,
-    body::{self, BoxBody},
+    HttpMessage, HttpResponseBuilder,
+    body::BoxBody,
     dev::{self, Service, ServiceRequest, ServiceResponse},
     error::Error,
     guard::Guard,
 };
 use futures_core::future::LocalBoxFuture;
 
+use super::utils::resolve_uri;
 use crate::modules::guard::Location;
 use crate::modules::utils::{check_guards, check_locations, default_response};
 
@@ -28,6 +29,8 @@ impl Deref for ProxyService {
 pub struct ProxyServiceInner {
     pub(crate) guards: Vec<Rc<dyn Guard>>,
     pub(crate) locations: Vec<Rc<dyn Location>>,
+    pub(crate) client: Rc<awc::Client>,
+    pub(crate) resolve: awc::http::Uri,
 }
 
 impl Service<ServiceRequest> for ProxyService {
@@ -45,18 +48,37 @@ impl Service<ServiceRequest> for ProxyService {
 
         let this = self.clone();
         Box::pin(async move {
-            println!("rev_proxy {url_path:?}");
+            let (http_req, payload) = req.into_parts();
 
-            let (req, mut payload) = req.into_parts();
-            let pl = actix_web::web::Payload::from_request(&req, &mut payload)
+            // build forwarded request from web-service request
+            let uri = resolve_uri(&this.resolve, &url_path, http_req.uri());
+            let mut forward_res = match this
+                .client
+                .request(http_req.method().clone(), uri)
+                .send_stream(payload)
                 .await
-                .unwrap();
+            {
+                Ok(res) => res,
+                Err(err) => {
+                    log::error!("request error: {err:?}");
+                    let req = ServiceRequest::from_parts(http_req, dev::Payload::None);
+                    return Ok(default_response(req));
+                }
+            };
 
-            let content = pl.to_bytes().await;
-            println!("content: {content:?}");
+            // wrap response payload into body-stream
+            let payload = forward_res.take_payload();
+            let body = actix_web::body::BodyStream::new(payload);
 
-            let req = ServiceRequest::from_parts(req, payload);
-            Ok(default_response(req))
+            // transfer client response details to web-service http-response
+            let mut builder = HttpResponseBuilder::new(forward_res.status());
+            for header in forward_res.headers() {
+                builder.append_header(header);
+            }
+
+            // build final response and send
+            let http_res = builder.body(body);
+            Ok(ServiceResponse::new(http_req, http_res))
         })
     }
 }

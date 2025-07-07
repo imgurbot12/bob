@@ -107,4 +107,6 @@ macro_rules! de_fromstr {
     };
 }
 
+pub(crate) use de_fromstr;
+
 de_fromstr!(DomainMatch);
