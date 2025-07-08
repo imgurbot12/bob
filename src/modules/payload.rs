@@ -14,18 +14,6 @@ use actix_web::{
 };
 use futures_core::{Stream, stream::LocalBoxStream};
 
-//TODO: need to load stream into memory or new temp file stream
-// that can be re-generated/copied to create multiple instances
-// of ServiceRequest that can be passed to each module.
-//
-// OPTIMIATION: avoid redunant iteration or complex processing
-// when only single module is present
-
-//TODO: value in wrapping PayloadBuffer with Rc as PayloadRef like multipart?
-
-//TODO: end wrapper needs to implement Stream and needs to be reset-able, to
-// re-read the same buffered bytes again.
-
 pub(crate) struct PayloadRef {
     payload: Rc<RefCell<PayloadBuffer>>,
 }

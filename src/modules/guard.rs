@@ -27,7 +27,7 @@ pub struct GlobHostGuards(Vec<glob::Pattern>);
 
 impl GlobHostGuards {
     pub fn new(domains: &Vec<DomainMatch>) -> Self {
-        Self(domains.iter().map(|d| d.glob.clone()).collect())
+        Self(domains.iter().map(|d| d.0.clone()).collect())
     }
 }
 

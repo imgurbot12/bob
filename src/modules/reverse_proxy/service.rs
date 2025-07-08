@@ -11,7 +11,7 @@ use actix_web::{
 };
 use futures_core::future::LocalBoxFuture;
 
-use super::utils::resolve_uri;
+use super::utils::combine_uri;
 use crate::modules::guard::Location;
 use crate::modules::utils::{check_guards, check_locations, default_response};
 
@@ -50,11 +50,21 @@ impl Service<ServiceRequest> for ProxyService {
         Box::pin(async move {
             let (http_req, payload) = req.into_parts();
 
-            // build forwarded request from web-service request
-            let uri = resolve_uri(&this.resolve, &url_path, http_req.uri());
+            // combine resolution uri with request-uri
+            let uri = match combine_uri(&this.resolve, &url_path, http_req.uri()) {
+                Ok(uri) => uri,
+                Err(err) => {
+                    log::error!("request error: {err:?}");
+                    let req = ServiceRequest::from_parts(http_req, dev::Payload::None);
+                    return Ok(default_response(req));
+                }
+            };
+
+            // build forwarded-request and send, then retrieve response
             let mut forward_res = match this
                 .client
                 .request(http_req.method().clone(), uri)
+                .no_decompress()
                 .send_stream(payload)
                 .await
             {

@@ -7,9 +7,6 @@ use serde::{Deserialize, de::Error};
 
 use crate::modules::ModulesConfig;
 
-//TODO: add dynamic server-name match using glob
-//TODO: add dynamic location matcher that compiles to tower routes?
-//TODO: add dynamic string deserialization for listen-cfg
 //TODO: add defined ssl controls like prefered protocols/timeouts/ciphers
 
 pub fn read_config(path: &PathBuf) -> Result<Vec<Config>> {
@@ -42,20 +39,16 @@ pub struct Config {
 pub struct ListenCfg {
     pub port: u16,
     pub host: Option<String>,
-    pub ssl: SSLCfg,
+    pub ssl: Option<SSLCfg>,
 }
 
 #[derive(Debug, Clone)]
-pub struct DomainMatch {
-    pub pattern: String,
-    pub glob: glob::Pattern,
-}
+pub struct DomainMatch(pub glob::Pattern);
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SSLCfg {
     pub certificate: PathBuf,
     pub certificate_key: PathBuf,
-    pub dhparam: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -86,10 +79,7 @@ impl FromStr for DomainMatch {
     type Err = glob::PatternError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let glob = glob::Pattern::new(s)?;
-        Ok(Self {
-            pattern: s.to_owned(),
-            glob,
-        })
+        Ok(Self(glob))
     }
 }
 

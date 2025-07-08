@@ -2,25 +2,28 @@
 
 use std::{collections::HashMap, path::PathBuf};
 
+use anyhow::{Context, Result};
 use awc::http::Uri;
 
 type Query = HashMap<String, String>;
 
-pub(crate) fn resolve_uri(resolve: &Uri, path: &str, request: &Uri) -> Uri {
+pub(crate) fn combine_uri(resolve: &Uri, path: &str, request: &Uri) -> Result<Uri> {
     let path = PathBuf::from(resolve.path().to_string())
         .join(path)
         .to_str()
         .map(|s| s.to_owned())
-        .expect("invalid request path");
+        .context("invalid request path")?;
     let query = match resolve.query() {
         None => request.query().map(|s| s.to_string()).unwrap_or_default(),
         Some(base) => {
-            let mut query: Query = serde_urlencoded::from_str(base).unwrap();
+            let mut query: Query =
+                serde_urlencoded::from_str(base).context("invalid resolve query-string")?;
             if let Some(more) = request.query() {
-                let more: Query = serde_urlencoded::from_str(more).unwrap();
+                let more: Query =
+                    serde_urlencoded::from_str(more).context("invalid request query-string")?;
                 query.extend(more.into_iter());
             }
-            serde_urlencoded::to_string(query).unwrap_or_default()
+            serde_urlencoded::to_string(query).context("failed to combine query strings")?
         }
     };
     let path_and_query = match query.is_empty() {
@@ -33,9 +36,9 @@ pub(crate) fn resolve_uri(resolve: &Uri, path: &str, request: &Uri) -> Uri {
             resolve
                 .authority()
                 .map(|s| s.as_str())
-                .expect("missing url authority"),
+                .context("missing base url authority")?,
         )
         .path_and_query(path_and_query)
         .build()
-        .expect("invalid request uri")
+        .context("failed to build request uri")
 }
