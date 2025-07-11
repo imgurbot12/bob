@@ -5,6 +5,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use actix_web::dev::Payload;
 use actix_web::{
     Error, HttpMessage, HttpResponse,
     body::{self, BoxBody},
@@ -130,13 +131,12 @@ where
 
             // load request body into memory from payload with max-size
             let stream = body::BodyStream::new(req.take_payload());
-            let Ok(http_body) = body::to_bytes_limited(stream, this.max_request_body_size).await
-            else {
-                return Ok(req.into_response(HttpResponse::PayloadTooLarge()));
-            };
-            let http_body = match http_body {
-                Ok(body) => body,
-                Err(err) => return Ok(req.error_response(err)),
+            let http_body = match body::to_bytes_limited(stream, this.max_request_body_size).await {
+                Ok(body) => match body {
+                    Ok(body) => body,
+                    Err(err) => return Ok(req.error_response(err)),
+                },
+                Err(_) => return Ok(req.into_response(HttpResponse::PayloadTooLarge())),
             };
 
             // process request body
@@ -144,10 +144,11 @@ where
                 .append_request_body(&http_body)
                 .expect("modsecurity failed to process request body");
 
-            // put memory-cached payload back into request and await response
+            // put in-memory body back into payload
             let buf = BytesPayload::new(http_body);
-            let req2 = ServiceRequest::from_parts(req.request().clone(), buf.into_payload());
-            let res = this.service.call(req2).await?;
+            req.set_payload(buf.into_payload());
+
+            let res = this.service.call(req).await?;
 
             // process status-line and response headers
             let code: u16 = res.status().into();
@@ -161,17 +162,19 @@ where
                 .process_response_headers(code as i32, &version)
                 .expect("modsecurity failed to process response headers");
 
-            // load response body into memory from payload with max-size
+            // repackage request for re-use in response generation
             let (http_req, http_res) = res.into_parts();
-            let (http_res, mut stream) = http_res.into_parts();
-            let Ok(http_body) =
-                body::to_bytes_limited(&mut stream, this.max_response_body_size).await
-            else {
-                return Ok(req.into_response(HttpResponse::PayloadTooLarge()));
-            };
-            let http_body = match http_body {
-                Ok(body) => body,
-                Err(err) => return Ok(req.error_response(err)),
+            let req = ServiceRequest::from_parts(http_req, Payload::None);
+
+            // load response body into memory from payload with max-size
+            let (http_res, stream) = http_res.into_parts();
+            let http_body = match body::to_bytes_limited(stream, this.max_response_body_size).await
+            {
+                Ok(body) => match body {
+                    Ok(body) => body,
+                    Err(err) => return Ok(req.error_response(err)),
+                },
+                Err(_) => return Ok(req.into_response(HttpResponse::InsufficientStorage())),
             };
 
             // process response body
@@ -182,7 +185,7 @@ where
             // send custom response on intervention
             if let Some(intv) = transaction.intervention() {
                 if let Some(msg) = intv.log() {
-                    log::warn!("modsecurity: {msg:?}");
+                    log::warn!("{msg}");
                 }
                 if let Some(url) = intv.url() {
                     let mut res = HttpResponse::TemporaryRedirect();
@@ -194,10 +197,11 @@ where
                 return Ok(req.into_response(HttpResponse::new(code)));
             }
 
-            // re-assemble final body
+            // place in-memory body back into response
             let boxed = body::BoxBody::new(http_body);
             let http_res = http_res.set_body(boxed);
-            Ok(ServiceResponse::new(http_req, http_res))
+
+            Ok(req.into_response(http_res))
         })
     }
 }
