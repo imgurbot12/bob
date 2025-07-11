@@ -5,6 +5,7 @@ use anyhow::Context;
 use clap::Parser;
 
 mod config;
+mod middleware;
 mod modules;
 
 use config::{Config, ListenCfg, SSLCfg};
@@ -42,7 +43,10 @@ fn build_tls_config(cfg: &SSLCfg) -> anyhow::Result<rustls::ServerConfig> {
 async fn server(config: Config, listen: ListenCfg) -> anyhow::Result<()> {
     let server = HttpServer::new(move || {
         let svc = modules::build_modules(&config);
-        App::new().service(svc)
+
+        App::new()
+            .wrap(config.middleware.modsecurity())
+            .service(svc)
     });
 
     let addr = (listen.host(), listen.port);

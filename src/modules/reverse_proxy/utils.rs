@@ -8,7 +8,7 @@ use awc::http::Uri;
 type Query = HashMap<String, String>;
 
 pub(crate) fn combine_uri(resolve: &Uri, path: &str, request: &Uri) -> Result<Uri> {
-    let path = PathBuf::from(resolve.path().to_string())
+    let path = PathBuf::from(resolve.path())
         .join(path)
         .to_str()
         .map(|s| s.to_owned())

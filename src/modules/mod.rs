@@ -10,14 +10,19 @@ mod utils;
 
 use guard::*;
 
+#[cfg(feature = "fs")]
 mod file_server;
+
+#[cfg(feature = "rev_proxy")]
 mod reverse_proxy;
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "module")]
+#[serde(tag = "module", deny_unknown_fields)]
 pub enum ModulesConfig {
+    #[cfg(feature = "fs")]
     #[serde(alias = "file_server")]
     FileServer(file_server::FileServerConfig),
+    #[cfg(feature = "rev_proxy")]
     #[serde(alias = "rev_proxy")]
     ReverseProxy(reverse_proxy::ReverseProxyConfig),
 }
@@ -26,11 +31,13 @@ impl ModulesConfig {
     fn add_service(&self, svc: &mut factory::ModuleSvc, cfg: &Config, dir: &DirectiveCfg) {
         let loc = LocationMatches::new(dir.locations());
         match self {
+            #[cfg(feature = "fs")]
             Self::FileServer(config) => {
                 let mut factory = config.into_factory(cfg);
                 factory.add_location(loc);
                 svc.add_module(factory)
             }
+            #[cfg(feature = "rev_proxy")]
             Self::ReverseProxy(config) => {
                 let mut factory = config.into_factory();
                 factory.add_location(loc);

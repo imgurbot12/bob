@@ -5,6 +5,7 @@ use std::{path::PathBuf, str::FromStr};
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, de::Error};
 
+use crate::middleware::MiddlewareConfig;
 use crate::modules::ModulesConfig;
 
 //TODO: add defined ssl controls like prefered protocols/timeouts/ciphers
@@ -22,10 +23,11 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<Config>> {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub listen: Vec<ListenCfg>,
     pub server_name: Vec<DomainMatch>,
+    pub middleware: MiddlewareConfig,
     pub directives: Vec<DirectiveCfg>,
     // file server global options
     pub root: Option<PathBuf>,

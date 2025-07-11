@@ -9,6 +9,8 @@ mod utils;
 
 use config::*;
 
+//TODO: add option to add X-Forwarded-For headers
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct ReverseProxyConfig {
     resolve: Uri,
