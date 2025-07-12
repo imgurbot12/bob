@@ -15,10 +15,11 @@ struct Cli {
     config: Option<PathBuf>,
 }
 
+//DONE: libmodsecurity middleware
+
 //TODO: ip whitelist/blacklist middleware
 //TODO: bot challenge middleware
 //TODO: ratelimit middleware
-//TODO: libmodsecurity middleware
 //TODO: php-fpm module (https://crates.io/crates/fastcgi-client)
 
 //TODO: make ssl feature trait, add dependant feature for actix-web
@@ -41,11 +42,12 @@ fn build_tls_config(cfg: &SSLCfg) -> anyhow::Result<rustls::ServerConfig> {
 }
 
 async fn server(config: Config, listen: ListenCfg) -> anyhow::Result<()> {
+    let lcfg = listen.clone();
     let server = HttpServer::new(move || {
-        let svc = modules::build_modules(&config);
+        let svc = modules::build_modules(&config, &lcfg);
 
         App::new()
-            .wrap(config.middleware.modsecurity())
+            .wrap(config.middleware.modsecurity(&lcfg))
             .service(svc)
     });
 

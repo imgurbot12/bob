@@ -62,8 +62,13 @@ pub struct DirectiveCfg {
 }
 
 impl ListenCfg {
+    #[inline]
     pub fn host(&self) -> &str {
         self.host.as_ref().map(|s| s.as_str()).unwrap_or("0.0.0.0")
+    }
+    #[inline]
+    pub fn address(&self) -> (String, u16) {
+        (self.host().to_owned(), self.port)
     }
 }
 
@@ -85,6 +90,23 @@ impl FromStr for DomainMatch {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Duration(pub(crate) std::time::Duration);
+
+impl Duration {
+    #[inline]
+    pub fn from_secs(secs: u64) -> std::time::Duration {
+        std::time::Duration::from_secs(secs)
+    }
+}
+
+impl FromStr for Duration {
+    type Err = humantime::DurationError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(humantime::parse_duration(s)?))
+    }
+}
+
 macro_rules! de_fromstr {
     ($s:ident) => {
         impl<'de> Deserialize<'de> for $s {
@@ -102,3 +124,4 @@ macro_rules! de_fromstr {
 pub(crate) use de_fromstr;
 
 de_fromstr!(DomainMatch);
+de_fromstr!(Duration);

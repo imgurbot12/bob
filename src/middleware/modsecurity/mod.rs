@@ -36,6 +36,16 @@ pub struct ModSecurity {
     rule_files: Vec<PathBuf>,
     max_request_body_size: Option<usize>,
     max_response_body_size: Option<usize>,
+    #[serde(skip)]
+    server_address: Option<(String, u16)>,
+}
+
+impl ModSecurity {
+    pub fn finalize(&self, cfg: &crate::config::ListenCfg) -> Self {
+        let mut this = self.clone();
+        this.server_address = Some(cfg.address());
+        this
+    }
 }
 
 impl<S> Transform<S, ServiceRequest> for ModSecurity
@@ -67,6 +77,7 @@ where
             rules,
             max_request_body_size: self.max_request_body_size.unwrap_or(u16::MAX as usize),
             max_response_body_size: self.max_response_body_size.unwrap_or(u16::MAX as usize),
+            server_address: self.server_address.clone().expect("missing server address"),
         }))))
     }
 }
@@ -88,6 +99,7 @@ pub struct ModSecurityInner<S> {
     rules: modsecurity::Rules,
     max_request_body_size: usize,
     max_response_body_size: usize,
+    server_address: (String, u16),
 }
 
 impl<S> Service<ServiceRequest> for ModSecurityMiddleware<S>
@@ -110,6 +122,19 @@ where
                 .with_rules(&this.rules)
                 .build()
                 .expect("modsecurity transaction build failed");
+
+            // pass connection information
+            if let Some(peer) = req.peer_addr() {
+                let client = peer.ip().to_string();
+                transaction
+                    .process_connection(
+                        &client,
+                        peer.port() as i32,
+                        &this.server_address.0,
+                        this.server_address.1 as i32,
+                    )
+                    .expect("modsecurity failed to process connection");
+            }
 
             // process request uri
             let uri = req.uri().to_string();

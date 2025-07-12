@@ -1,27 +1,7 @@
-//! FileServer Error Implementation Stolen from Actix-Files
+//! Error Implementation Stolen from Actix-Files
 
 use actix_web::{ResponseError, http::StatusCode};
 use derive_more::Display;
-
-/// Errors which can occur when serving static files.
-#[derive(Debug, PartialEq, Eq, Display)]
-pub enum FilesError {
-    /// Path is not a directory.
-    #[allow(dead_code)]
-    #[display("path is not a directory. Unable to serve static files")]
-    IsNotDirectory,
-
-    /// Cannot render directory.
-    #[display("unable to render directory without index file")]
-    IsDirectory,
-}
-
-impl ResponseError for FilesError {
-    /// Returns `404 Not Found`.
-    fn status_code(&self) -> StatusCode {
-        StatusCode::NOT_FOUND
-    }
-}
 
 #[derive(Debug, PartialEq, Eq, Display)]
 #[non_exhaustive]

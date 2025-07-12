@@ -7,6 +7,7 @@ mod factory;
 mod service;
 mod utils;
 
+use crate::config::Duration;
 use config::*;
 
 //TODO: add option to add X-Forwarded-For headers

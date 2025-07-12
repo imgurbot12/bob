@@ -7,6 +7,11 @@ use actix_web::{
     mime,
 };
 
+mod error;
+mod path_buf;
+
+pub use path_buf::PathBufWrap;
+
 #[inline]
 pub fn default_response(req: ServiceRequest) -> ServiceResponse {
     req.into_response(

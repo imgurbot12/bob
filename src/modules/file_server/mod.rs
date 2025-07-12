@@ -6,9 +6,7 @@ use serde::Deserialize;
 
 use crate::config::Config;
 
-mod error;
 mod factory;
-mod path_buf;
 mod service;
 
 //TODO: directive/module controls over passing to next for specified status-codes

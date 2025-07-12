@@ -11,7 +11,7 @@ use actix_web::{FromRequest, HttpRequest, dev::Payload};
 use super::error::UriSegmentError;
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct PathBufWrap(PathBuf);
+pub struct PathBufWrap(PathBuf);
 
 impl FromStr for PathBufWrap {
     type Err = UriSegmentError;

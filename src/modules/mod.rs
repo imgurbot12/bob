@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::config::{Config, DirectiveCfg};
+use crate::config::{Config, DirectiveCfg, ListenCfg};
 
 mod factory;
 mod guard;
@@ -9,6 +9,9 @@ mod service;
 mod utils;
 
 use guard::*;
+
+#[cfg(feature = "fastcgi")]
+mod fastcgi;
 
 #[cfg(feature = "fs")]
 mod file_server;
@@ -25,10 +28,19 @@ pub enum ModulesConfig {
     #[cfg(feature = "rev_proxy")]
     #[serde(alias = "rev_proxy")]
     ReverseProxy(reverse_proxy::ReverseProxyConfig),
+    #[cfg(feature = "fastcgi")]
+    #[serde(alias = "fastcgi")]
+    PHPFpm(fastcgi::FastCGIConfig),
 }
 
 impl ModulesConfig {
-    fn add_service(&self, svc: &mut factory::ModuleSvc, cfg: &Config, dir: &DirectiveCfg) {
+    fn add_service(
+        &self,
+        svc: &mut factory::ModuleSvc,
+        cfg: &Config,
+        dir: &DirectiveCfg,
+        lsn: &ListenCfg,
+    ) {
         let loc = LocationMatches::new(dir.locations());
         match self {
             #[cfg(feature = "fs")]
@@ -43,11 +55,17 @@ impl ModulesConfig {
                 factory.add_location(loc);
                 svc.add_module(factory);
             }
+            #[cfg(feature = "fastcgi")]
+            Self::PHPFpm(config) => {
+                let mut factory = config.into_factory(cfg, lsn);
+                factory.add_location(loc);
+                svc.add_module(factory);
+            }
         }
     }
 }
 
-pub fn build_modules(cfg: &Config) -> factory::ModuleSvc {
+pub fn build_modules(cfg: &Config, lsn: &ListenCfg) -> factory::ModuleSvc {
     let mut svc = factory::ModuleSvc::new("");
     if !cfg.server_name.is_empty() {
         let guard = GlobHostGuards::new(&cfg.server_name);
@@ -56,7 +74,7 @@ pub fn build_modules(cfg: &Config) -> factory::ModuleSvc {
     // add submodules to module-svc for each directive
     for dir in cfg.directives.iter() {
         for module in dir.modules.iter() {
-            module.add_service(&mut svc, cfg, dir);
+            module.add_service(&mut svc, cfg, dir, lsn);
         }
     }
     svc
