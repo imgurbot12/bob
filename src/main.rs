@@ -1,93 +1,72 @@
 use std::path::PathBuf;
 
+use actix_chain::Chain;
 use actix_web::{App, HttpServer};
-use anyhow::Context;
+use anyhow::{Context, Result};
 use clap::Parser;
 
 mod config;
-mod middleware;
-mod modules;
+mod tls;
 
-use config::{Config, ListenCfg, SSLCfg};
+use crate::config::{ServerConfig, Spec};
 
 #[derive(Debug, Parser)]
 struct Cli {
     config: Option<PathBuf>,
 }
 
-//DONE: libmodsecurity middleware
+fn assemble_chain(config: &ServerConfig) -> Chain {
+    let mut chain = Chain::new("");
+    chain = config
+        .server_name
+        .clone()
+        .into_iter()
+        .fold(chain, |chain, domain| chain.guard(domain));
 
-//TODO: ip whitelist/blacklist middleware
-//TODO: bot challenge middleware
-//TODO: ratelimit middleware
-//TODO: php-fpm module (https://crates.io/crates/fastcgi-client)
-
-//TODO: make ssl feature trait, add dependant feature for actix-web
-
-fn build_tls_config(cfg: &SSLCfg) -> anyhow::Result<rustls::ServerConfig> {
-    use rustls::pki_types::pem::PemObject;
-    use rustls::pki_types::{CertificateDer, PrivateKeyDer};
-
-    let certs = CertificateDer::pem_file_iter(&cfg.certificate)
-        .context("failed to read tls certificate")?
-        .map(|pem| pem.expect("invalid pem"))
-        .collect();
-    let private_key =
-        PrivateKeyDer::from_pem_file(&cfg.certificate_key).context("invalid private tls key")?;
-
-    rustls::ServerConfig::builder()
-        .with_no_client_auth()
-        .with_single_cert(certs, private_key)
-        .context("failed to build rustls server config")
-}
-
-async fn server(config: Config, listen: ListenCfg) -> anyhow::Result<()> {
-    let lcfg = listen.clone();
-    let server = HttpServer::new(move || {
-        let svc = modules::build_modules(&config, &lcfg);
-
-        App::new()
-            .wrap(config.middleware.modsecurity(&lcfg))
-            .service(svc)
-    });
-
-    let addr = (listen.host(), listen.port);
-    let bind = match listen.ssl.as_ref() {
-        None => server.bind(addr).context("listener bind failed")?,
-        Some(cfg) => {
-            let tls = build_tls_config(cfg)?;
-            server
-                .bind_rustls_0_23(addr, tls)
-                .context("tls listener bind failed")?
+    for directive in config.directives.iter() {
+        let spec = Spec { directive, config };
+        for module in directive.modules.iter() {
+            let link = module.link(&spec);
+            chain.push_link(link);
         }
-    };
-
-    bind.run().await.context("http server failed")
+    }
+    chain
 }
 
 #[actix_web::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     env_logger::init();
 
     let cli = Cli::parse();
     let path = cli.config.unwrap_or_else(|| PathBuf::from("./config.yaml"));
     let config = config::read_config(&path)?;
 
-    let tasks: Vec<actix_web::rt::task::JoinHandle<anyhow::Result<()>>> = config
-        .into_iter()
-        .map(|cfg| {
-            cfg.listen
-                .clone()
-                .into_iter()
-                .map(|l| (cfg.clone(), l))
-                .collect::<Vec<(Config, ListenCfg)>>()
-        })
-        .flatten()
-        .map(|(cfg, lcfg)| actix_web::rt::spawn(server(cfg, lcfg)))
-        .collect();
+    let sconfig = config.clone();
+    let mut server = HttpServer::new(move || {
+        let app = sconfig
+            .iter()
+            .map(assemble_chain)
+            .fold(App::new(), |app, chain| app.service(chain));
+        app
+    });
 
-    for task in tasks {
-        task.await??
-    }
-    Ok(())
+    server = config
+        .iter()
+        .map(|cfg| cfg.listen.iter())
+        .flatten()
+        .filter(|listen| listen.ssl.is_none())
+        .map(|addr| addr.address())
+        .try_fold(server, |s, addr| s.bind(addr))?;
+
+    let sslcfg = tls::build_tls_config(&config)?;
+    server = config
+        .iter()
+        .map(|cfg| cfg.listen.iter())
+        .flatten()
+        .filter(|listen| listen.ssl.is_some())
+        .map(|addr| addr.address())
+        .try_fold(server, |s, addr| s.bind_rustls_0_23(addr, sslcfg.clone()))?;
+
+    log::info!("spawning server");
+    server.run().await.context("server spawn failed")
 }

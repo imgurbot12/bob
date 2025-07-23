@@ -1,0 +1,13 @@
+---
+- listen:
+    - port: 8080
+      host: localhost
+
+  server_name: ['example.com']
+
+  directives:
+    - location: /
+      modules:
+        - module: fileserver
+        - module: rproxy
+          resolve: http://example.com
