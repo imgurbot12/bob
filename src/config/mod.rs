@@ -6,10 +6,13 @@ use actix_web::{guard::Guard, http::header};
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, de::Error};
 
+mod middleware;
 mod modules;
 
-pub use modules::{ModulesConfig, Spec};
+pub use middleware::MiddlewareConfig;
+pub use modules::ModulesConfig;
 
+/// Read all server configurations from a config file.
 pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
     let s = std::fs::read_to_string(path).context("failed to read config")?;
     let configs: Vec<ServerConfig> = serde_yaml::from_str(&s).context("invalid config")?;
@@ -19,19 +22,50 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
     }
 }
 
+//TODO: implement index retry support middlware.
+
+/// Server specific configuration settings.
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct ServerConfig {
+    /// Disable configuration from initialization within server.
     pub disable: bool,
+    /// List of configurations for binding server addresses.
     pub listen: Vec<ListenCfg>,
+    /// List of domain-names matchers with the server.
+    ///
+    /// Once registered, the server will only respond to
+    /// requests with `Host` set to the relevant matchers.
     pub server_name: Vec<DomainMatch>,
-    // pub middleware: MiddlewareConfig,
+    /// Configuration settings for middlware within server instance.
+    pub middleware: MiddlewareConfig,
+    /// Request handling directives associated with server instance.
     pub directives: Vec<DirectiveCfg>,
+    /// Default root filepath for various request handling modules.
     pub root: Option<PathBuf>,
+    /// List of supported index file patterns when requesting resources.
+    ///
+    /// Default is [index.html, ]
     pub index: Option<Vec<PathBuf>>,
+    /// Default maximum buffer-size when reading messages into memory.
     pub body_buffer_size: Option<usize>,
+    /// Request logging toggle.
+    ///
+    /// Default is true
+    pub log_requests: Option<bool>,
+    /// Sanitizes error-messages produced by configured modules when enabled.
+    ///
+    /// Default is true
+    pub sanitize_errors: Option<bool>,
 }
 
+pub struct Spec<'a> {
+    pub config: &'a ServerConfig,
+}
+
+/// Domain matcher expression.
+///
+/// Uses glob syntax.
 #[derive(Debug, Clone)]
 pub struct DomainMatch(pub glob::Pattern);
 
@@ -52,23 +86,30 @@ impl FromStr for DomainMatch {
     }
 }
 
+/// TLS Configuration for server listener.
 #[derive(Debug, Clone, Deserialize)]
 pub struct SSLCfg {
+    /// TLS Certificate public key.
     pub certificate: PathBuf,
+    /// TLS Certificate private key.
     pub certificate_key: PathBuf,
 }
 
+/// Server listener bindings configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ListenCfg {
+    /// Port server will bind to.
     pub port: u16,
+    /// Host address server will bind to.
     pub host: Option<String>,
+    /// SSL configuration for listener.
     pub ssl: Option<SSLCfg>,
 }
 
 impl ListenCfg {
     #[inline]
     pub fn host(&self) -> &str {
-        self.host.as_ref().map(|s| s.as_str()).unwrap_or("0.0.0.0")
+        self.host.as_deref().unwrap_or("0.0.0.0")
     }
     #[inline]
     pub fn address(&self) -> (String, u16) {
@@ -76,13 +117,21 @@ impl ListenCfg {
     }
 }
 
+/// Group of request modules bound to a specific uri path prefix.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct DirectiveCfg {
-    pub location: Option<String>,
+    /// List of request modules configurations bound to directive.
     pub modules: Vec<ModulesConfig>,
+    /// Location associated with modules
+    ///
+    /// Default is `/`
+    pub location: Option<String>,
 }
 
+/// Time duration parsed from human-readable format.
+///
+/// Example: `1h5m2s`
 #[derive(Clone, Debug)]
 pub struct Duration(pub(crate) std::time::Duration);
 
@@ -93,6 +142,7 @@ impl FromStr for Duration {
     }
 }
 
+/// Resource URI object and parser.
 #[derive(Clone, Debug)]
 pub struct Uri(pub(crate) actix_web::http::Uri);
 
@@ -126,6 +176,6 @@ de_fromstr!(Uri);
 #[inline]
 pub fn default_duration(d: &Option<Duration>, default_secs: u64) -> std::time::Duration {
     d.as_ref()
-        .map(|d| d.0.clone())
+        .map(|d| d.0)
         .unwrap_or_else(|| std::time::Duration::from_secs(default_secs))
 }

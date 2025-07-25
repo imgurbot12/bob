@@ -10,7 +10,7 @@ use rustls::{
 };
 
 #[inline]
-pub(crate) fn build_tls_config(config: &Vec<ServerConfig>) -> Result<rustls::ServerConfig> {
+pub(crate) fn build_tls_config(config: &[ServerConfig]) -> Result<rustls::ServerConfig> {
     let resolver = TlsResolver::new(config)?;
     Ok(rustls::ServerConfig::builder()
         .with_no_client_auth()
@@ -53,7 +53,7 @@ pub struct TlsResolver(Vec<TlsEntry>);
 
 impl TlsResolver {
     #[inline]
-    pub fn new(config: &Vec<ServerConfig>) -> Result<Self> {
+    pub fn new(config: &[ServerConfig]) -> Result<Self> {
         let mut entries = Vec::new();
         for srv in config.iter() {
             for ssl in srv.listen.iter().filter_map(|l| l.ssl.as_ref()) {

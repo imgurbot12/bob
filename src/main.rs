@@ -1,22 +1,27 @@
 use std::path::PathBuf;
 
 use actix_chain::Chain;
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, middleware::Logger};
 use anyhow::{Context, Result};
 use clap::Parser;
 
-mod config;
-mod tls;
+pub mod config;
+pub mod tls;
 
 use crate::config::{ServerConfig, Spec};
 
+/// The greatest of all reverse proxies, and
+/// written in 🦀 (so you KNOW ITS GOOD 👌)
 #[derive(Debug, Parser)]
 struct Cli {
+    /// Path of configuration to load (default: ./config.yaml).
+    #[clap(short, long)]
     config: Option<PathBuf>,
 }
 
+/// Assemble [`actix_chain::Chain`] from server configuration instance.
 fn assemble_chain(config: &ServerConfig) -> Chain {
-    let mut chain = Chain::new("");
+    let mut chain = Chain::default();
     chain = config
         .server_name
         .clone()
@@ -24,13 +29,26 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
         .fold(chain, |chain, domain| chain.guard(domain));
 
     for directive in config.directives.iter() {
-        let spec = Spec { directive, config };
-        for module in directive.modules.iter() {
-            let link = module.link(&spec);
-            chain.push_link(link);
-        }
+        let spec = Spec { config };
+        let location = directive.location.clone().unwrap_or_default();
+        let prefix = location.trim_start_matches('/');
+
+        let mut link: actix_chain::Link = directive
+            .modules
+            .iter()
+            .fold(Chain::new(prefix), |chain, m| chain.link(m.link(&spec)))
+            .into();
+
+        link = config.middleware.modsecurity(link, &spec);
+        link = config.middleware.rewrite(link, &spec);
+        chain.push_link(link);
     }
-    chain
+
+    if config.sanitize_errors.unwrap_or(true) {
+        chain = chain.wrap(actix_sanitize::Sanitizer::default());
+    }
+
+    chain.wrap(Logger::default())
 }
 
 #[actix_web::main]
@@ -43,17 +61,16 @@ async fn main() -> Result<()> {
 
     let sconfig = config.clone();
     let mut server = HttpServer::new(move || {
-        let app = sconfig
+        sconfig
             .iter()
             .map(assemble_chain)
-            .fold(App::new(), |app, chain| app.service(chain));
-        app
+            .fold(App::new(), |app, cfg| app.service(cfg))
     });
 
     server = config
         .iter()
-        .map(|cfg| cfg.listen.iter())
-        .flatten()
+        .filter(|cfg| !cfg.disable)
+        .flat_map(|cfg| cfg.listen.iter())
         .filter(|listen| listen.ssl.is_none())
         .map(|addr| addr.address())
         .try_fold(server, |s, addr| s.bind(addr))?;
@@ -61,8 +78,8 @@ async fn main() -> Result<()> {
     let sslcfg = tls::build_tls_config(&config)?;
     server = config
         .iter()
-        .map(|cfg| cfg.listen.iter())
-        .flatten()
+        .filter(|cfg| !cfg.disable)
+        .flat_map(|cfg| cfg.listen.iter())
         .filter(|listen| listen.ssl.is_some())
         .map(|addr| addr.address())
         .try_fold(server, |s, addr| s.bind_rustls_0_23(addr, sslcfg.clone()))?;

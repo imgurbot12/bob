@@ -4,16 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default    = ['fileserver', 'rproxy', 'fastcgi']
-fileserver = ['dep:actix-files']
-rproxy     = ['dep:actix-revproxy', 'dep:awc']
-fastcgi    = ['dep:actix-fastcgi']
+default     = ['fileserver', 'rproxy', 'fastcgi', 'middleware']
+middleware  = ['modsecurity', 'rewrite']
+fileserver  = ['dep:actix-files']
+rproxy      = ['dep:actix-revproxy', 'dep:awc']
+fastcgi     = ['dep:actix-fastcgi']
+modsecurity = ['dep:actix-modsecurity']
+rewrite     = ['dep:actix-rewrite']
 
 [dependencies]
-actix-chain = "0.1.0"
+actix-chain = { version = "0.1.0", path = "../actix-services/actix-chain" }
 actix-fastcgi = { version = "0.1.0", path = "../actix-services/actix-fastcgi", optional = true }
 actix-files = { version = "0.6.6", optional = true }
+actix-modsecurity = { version = "0.1.2", optional = true, path = "../actix-services/actix-modsecurity" }
 actix-revproxy = { version = "0.1.0", path = "../actix-services/actix-revproxy", optional = true, features = ["rustls-0_23"] }
+actix-rewrite = { version = "0.1.1", path = "../actix-services/actix-rewrite", optional = true }
+actix-sanitize = { version = "0.1.0", path = "../actix-services/actix-sanitize" }
 actix-service = "2.0.3"
 actix-web = { version = "4.11.0", features = ["rustls-0_23"] }
 anyhow = "1.0.98"
