@@ -12,18 +12,24 @@ fastcgi     = ['dep:actix-fastcgi']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
 
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+
 [dependencies]
 actix-chain = { version = "0.1.0", path = "../actix-services/actix-chain" }
 actix-fastcgi = { version = "0.1.0", path = "../actix-services/actix-fastcgi", optional = true }
 actix-files = { version = "0.6.6", optional = true }
 actix-modsecurity = { version = "0.1.2", optional = true, path = "../actix-services/actix-modsecurity" }
-actix-revproxy = { version = "0.1.0", path = "../actix-services/actix-revproxy", optional = true, features = ["rustls-0_23"] }
+actix-revproxy = { version = "0.2.0", path = "../actix-services/actix-revproxy", optional = true, features = ["rustls-0_23"] }
 actix-rewrite = { version = "0.1.1", path = "../actix-services/actix-rewrite", optional = true }
 actix-sanitize = { version = "0.1.0", path = "../actix-services/actix-sanitize" }
 actix-service = "2.0.3"
+actix-tls = { version = "3.4.0", features = ["rustls-0_23-webpki-roots"] }
 actix-web = { version = "4.11.0", features = ["rustls-0_23"] }
 anyhow = "1.0.98"
-awc = { version = "3.7.0", optional = true }
+awc = { version = "3.7.0", optional = true, git = "https://github.com/imgurbot12/actix-web.git", branch = "fix/awc-req-body" }
 clap = { version = "4.5.41", features = ["derive"] }
 env_logger = "0.11.8"
 futures-core = { version = "0.3.31", default-features = false }

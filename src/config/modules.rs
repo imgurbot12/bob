@@ -9,6 +9,9 @@ use super::Spec;
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "module", deny_unknown_fields)]
 pub enum ModulesConfig {
+    /// Configuration for buitltin redirect service.
+    #[serde(alias = "redirect")]
+    Redirect(redirect::Config),
     /// Configuration for [`actix_files`] service.
     #[cfg(feature = "fileserver")]
     #[serde(alias = "fileserver")]
@@ -27,12 +30,49 @@ impl ModulesConfig {
     /// Build [`actix_chain::Link`] from the module configuration.
     pub fn link(&self, spec: &Spec) -> Link {
         match self {
+            Self::Redirect(cfg) => Link::new(cfg.factory()),
             #[cfg(feature = "fileserver")]
             Self::FileServer(cfg) => Link::new(cfg.factory(spec)),
             #[cfg(feature = "rproxy")]
             Self::ReverseProxy(cfg) => Link::new(cfg.factory()),
             #[cfg(feature = "fastcgi")]
             Self::FastCGI(cfg) => Link::new(cfg.factory(spec)),
+        }
+    }
+}
+
+mod redirect {
+    use super::*;
+
+    use actix_web::{
+        HttpResponse, Route,
+        http::{StatusCode, header},
+    };
+
+    /// Redirect module configuration
+    #[derive(Clone, Debug, Default, Deserialize)]
+    pub struct Config {
+        /// Redirect URI
+        redirect: String,
+        /// Redirect status code
+        ///
+        /// Default is 302
+        #[serde(default)]
+        status_code: Option<u16>,
+    }
+
+    impl Config {
+        /// Produce [`actix_web::Route`] from config.
+        pub fn factory(&self) -> Route {
+            let status_code = self.status_code.unwrap_or(302);
+
+            let uri = self.redirect.to_owned();
+            let status = StatusCode::from_u16(status_code).expect("invalid redirect status");
+            actix_web::web::get().to(move || {
+                let mut builder = HttpResponse::build(status);
+                builder.insert_header((header::LOCATION, uri.clone()));
+                builder
+            })
         }
     }
 }
@@ -77,9 +117,12 @@ mod fileserver {
 
 #[cfg(feature = "rproxy")]
 mod rproxy {
+    use std::sync::Arc;
+
     use super::*;
     use crate::config::{Duration, Uri, default_duration};
 
+    use crate::tls::client::build_tls_config;
     use actix_revproxy::RevProxy;
 
     /// Reverse-Proxy module configuration.
@@ -89,7 +132,7 @@ mod rproxy {
         resolve: Uri,
         /// Max number of redirects allowed in client lookup.
         ///
-        /// Default is 10.
+        /// Default is 0.
         max_redirects: Option<u8>,
         /// Initial Connection Window Size
         ///
@@ -103,16 +146,27 @@ mod rproxy {
         ///
         /// Default is 5s
         timeout: Option<Duration>,
+        /// Verify SSL Configuration
+        ///
+        /// Default is true
+        verify_ssl: Option<bool>,
     }
 
     impl Config {
         /// Produce [`actix_revproxy::RevProxy`] from config.
         pub fn factory(&self) -> RevProxy {
+            let mut connector = awc::Connector::new();
+            if !self.verify_ssl.unwrap_or(true) {
+                let config = build_tls_config(false);
+                connector = connector.rustls_0_23(Arc::new(config));
+            }
             let client = awc::ClientBuilder::new()
+                .connector(connector)
+                .no_default_headers()
                 .initial_connection_window_size(self.initial_conn_size.unwrap_or(u16::MAX as u32))
                 .initial_window_size(self.initial_window_size.unwrap_or(u16::MAX as u32))
-                .max_redirects(self.max_redirects.unwrap_or(10))
                 .timeout(default_duration(&self.timeout, 5))
+                .max_redirects(self.max_redirects.unwrap_or(0))
                 .finish();
             RevProxy::new("", &self.resolve.0).with_client(client)
         }
@@ -145,8 +199,11 @@ mod fastcgi {
                 .clone()
                 .or(spec.config.root.clone())
                 .unwrap_or_else(|| PathBuf::from("."));
-
-            FastCGI::new("", root, &self.connect)
+            let fastcgi = FastCGI::new("", root, &self.connect);
+            spec.config
+                .index
+                .iter()
+                .fold(fastcgi, |fastcgi, index| fastcgi.index_file(index))
         }
     }
 }

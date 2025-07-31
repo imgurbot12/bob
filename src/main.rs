@@ -47,8 +47,11 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
     if config.sanitize_errors.unwrap_or(true) {
         chain = chain.wrap(actix_sanitize::Sanitizer::default());
     }
+    if config.log_requests.unwrap_or(true) {
+        chain = chain.wrap(Logger::default());
+    }
 
-    chain.wrap(Logger::default())
+    chain
 }
 
 #[actix_web::main]
@@ -75,7 +78,7 @@ async fn main() -> Result<()> {
         .map(|addr| addr.address())
         .try_fold(server, |s, addr| s.bind(addr))?;
 
-    let sslcfg = tls::build_tls_config(&config)?;
+    let sslcfg = tls::server::build_tls_config(&config)?;
     server = config
         .iter()
         .filter(|cfg| !cfg.disable)

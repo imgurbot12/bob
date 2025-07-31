@@ -46,7 +46,7 @@ pub struct ServerConfig {
     /// List of supported index file patterns when requesting resources.
     ///
     /// Default is [index.html, ]
-    pub index: Option<Vec<PathBuf>>,
+    pub index: Vec<String>,
     /// Default maximum buffer-size when reading messages into memory.
     pub body_buffer_size: Option<usize>,
     /// Request logging toggle.
