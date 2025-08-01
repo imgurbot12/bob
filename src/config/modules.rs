@@ -96,6 +96,10 @@ mod fileserver {
         ///
         /// Default is false.
         hidden_files: bool,
+        /// Size Threshold for Asyncly Processing Files
+        ///
+        /// Default is u16::MAX (65_365)
+        size_threshold: Option<u64>,
     }
 
     impl Config {
@@ -106,11 +110,15 @@ mod fileserver {
                 .clone()
                 .or(spec.config.root.clone())
                 .unwrap_or_else(|| PathBuf::from("."));
-            let mut files = Files::new("", root);
+            let mut files = Files::new("", root)
+                .set_size_threshold(self.size_threshold.unwrap_or(u16::MAX as u64));
             if self.hidden_files {
                 files = files.use_hidden_files();
             }
-            files
+            spec.config
+                .index
+                .iter()
+                .fold(files, |files, index| files.index_file(index))
         }
     }
 }

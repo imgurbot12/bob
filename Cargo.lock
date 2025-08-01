@@ -5,6 +5,7 @@ version = 4
 [[package]]
 name = "actix-chain"
 version = "0.1.0"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -18,7 +19,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f7b0a21988c1bf877cf4759ef5ddaac04c1c9fe808c9142ecb78ba97d97a28a"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
  "bytes",
  "futures-core",
  "futures-sink",
@@ -32,6 +33,7 @@ dependencies = [
 [[package]]
 name = "actix-fastcgi"
 version = "0.1.0"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-http",
@@ -39,7 +41,7 @@ dependencies = [
  "actix-web",
  "actix-web-lab",
  "deadpool",
- "derive_more 2.0.1",
+ "derive_more",
  "fastcgi-client",
  "futures-core",
  "futures-util",
@@ -54,16 +56,15 @@ dependencies = [
 [[package]]
 name = "actix-files"
 version = "0.6.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0773d59061dedb49a8aed04c67291b9d8cf2fe0b60130a381aab53c6dd86e9be"
+source = "git+https://github.com/imgurbot12/actix-web.git?branch=develop#24b421e71b6702838f6d24bfe1f9d4a59c9a23ae"
 dependencies = [
  "actix-http",
  "actix-service",
  "actix-utils",
  "actix-web",
- "bitflags",
+ "bitflags 2.9.1",
  "bytes",
- "derive_more 0.99.20",
+ "derive_more",
  "futures-core",
  "http-range",
  "log",
@@ -83,9 +84,9 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web",
- "bitflags",
+ "bitflags 2.9.1",
  "bytes",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-core",
  "http-range",
  "log",
@@ -108,11 +109,11 @@ dependencies = [
  "actix-tls",
  "actix-utils",
  "base64",
- "bitflags",
+ "bitflags 2.9.1",
  "brotli",
  "bytes",
  "bytestring",
- "derive_more 2.0.1",
+ "derive_more",
  "encoding_rs",
  "flate2",
  "foldhash",
@@ -149,11 +150,12 @@ dependencies = [
 [[package]]
 name = "actix-modsecurity"
 version = "0.1.2"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-http",
  "actix-service",
  "actix-web",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-core",
  "modsecurity",
  "tracing",
@@ -162,12 +164,13 @@ dependencies = [
 [[package]]
 name = "actix-revproxy"
 version = "0.2.0"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-service",
  "actix-web",
  "awc",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-core",
  "serde_urlencoded",
  "tracing",
@@ -176,11 +179,12 @@ dependencies = [
 [[package]]
 name = "actix-rewrite"
 version = "0.1.1"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-http",
  "actix-service",
  "actix-web",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-core",
  "mod_rewrite",
  "serde_urlencoded",
@@ -209,11 +213,13 @@ checksum = "24eda4e2a6e042aa4e55ac438a2ae052d3b5da0ecf83d7411e1a368946925208"
 dependencies = [
  "futures-core",
  "tokio",
+ "tokio-uring",
 ]
 
 [[package]]
 name = "actix-sanitize"
 version = "0.1.0"
+source = "git+https://github.com/imgurbot12/actix-services.git#71480d3bdb12a410c5bc3dff5b15d57d3c180365"
 dependencies = [
  "actix-web",
  "futures-core",
@@ -232,8 +238,9 @@ dependencies = [
  "futures-core",
  "futures-util",
  "mio",
- "socket2",
+ "socket2 0.5.10",
  "tokio",
+ "tokio-uring",
  "tracing",
 ]
 
@@ -299,7 +306,7 @@ dependencies = [
  "bytestring",
  "cfg-if",
  "cookie",
- "derive_more 2.0.1",
+ "derive_more",
  "encoding_rs",
  "foldhash",
  "futures-core",
@@ -317,7 +324,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "smallvec",
- "socket2",
+ "socket2 0.5.10",
  "time",
  "tracing",
  "url",
@@ -351,7 +358,7 @@ dependencies = [
  "bytes",
  "bytestring",
  "csv",
- "derive_more 2.0.1",
+ "derive_more",
  "form_urlencoded",
  "futures-core",
  "futures-util",
@@ -510,7 +517,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 [[package]]
 name = "awc"
 version = "3.7.0"
-source = "git+https://github.com/imgurbot12/actix-web.git?branch=fix%2Fawc-req-body#845534fc81d78d5f8af6269ef7e91a5c04001fd6"
+source = "git+https://github.com/imgurbot12/actix-web.git?branch=develop#24b421e71b6702838f6d24bfe1f9d4a59c9a23ae"
 dependencies = [
  "actix-codec",
  "actix-http",
@@ -522,7 +529,7 @@ dependencies = [
  "bytes",
  "cfg-if",
  "cookie",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-core",
  "futures-util",
  "h2",
@@ -590,7 +597,7 @@ version = "0.69.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271383c67ccabffb7381723dea0672a673f292304fcb45c01cc648c7a8d58088"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
  "cexpr",
  "clang-sys",
  "itertools 0.12.1",
@@ -606,6 +613,12 @@ dependencies = [
  "syn",
  "which",
 ]
+
+[[package]]
+name = "bitflags"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
@@ -628,7 +641,7 @@ version = "0.1.0"
 dependencies = [
  "actix-chain",
  "actix-fastcgi",
- "actix-files 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=develop)",
  "actix-modsecurity",
  "actix-revproxy",
  "actix-rewrite",
@@ -798,12 +811,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 
 [[package]]
-name = "convert_case"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
-
-[[package]]
 name = "cookie"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -893,19 +900,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c9e6a11ca8224451684bc0d7d5a7adbf8f2fd6887261a1cfc3c0432f9d4068e"
 dependencies = [
  "powerfmt",
-]
-
-[[package]]
-name = "derive_more"
-version = "0.99.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6edb4b64a43d977b8e99788fe3a04d483834fba1215a7e02caa415b626497f7f"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "rustc_version",
- "syn",
 ]
 
 [[package]]
@@ -1013,6 +1007,8 @@ dependencies = [
 [[package]]
 name = "fastcgi-client"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4761c80488a12bd18edac49cf5bcdcc524a90c689f11c2a2abaebb6fc677e644"
 dependencies = [
  "bytes",
  "futures-core",
@@ -1378,11 +1374,21 @@ dependencies = [
 
 [[package]]
 name = "io-uring"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "595a0399f411a508feb2ec1e970a4a30c249351e30208960d58298de8660b0e5"
+dependencies = [
+ "bitflags 1.3.2",
+ "libc",
+]
+
+[[package]]
+name = "io-uring"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b86e202f00093dcba4275d4636b93ef9dd75d025ae560d2521b45ea28ab49013"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
  "cfg-if",
  "libc",
 ]
@@ -1853,7 +1859,7 @@ version = "0.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d04b7d0ee6b4a0207a0a7adb104d23ecb0b47d6beae7152d0fa34b692b29fd6"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
 ]
 
 [[package]]
@@ -1918,21 +1924,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
-name = "rustc_version"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
-dependencies = [
- "semver",
-]
-
-[[package]]
 name = "rustix"
 version = "0.38.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
  "errno",
  "libc",
  "linux-raw-sys",
@@ -1992,12 +1989,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "semver"
-version = "1.0.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56e6fa9c48d24d85fb3de5ad847117517440f6beceb7798af16b4a87d616b8d0"
 
 [[package]]
 name = "serde"
@@ -2116,6 +2107,16 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+
+[[package]]
+name = "socket2"
+version = "0.4.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f7916fc008ca5542385b89a3d3ce689953c143e9304a9bf8beec1de48994c0d"
+dependencies = [
+ "libc",
+ "winapi",
+]
 
 [[package]]
 name = "socket2"
@@ -2256,14 +2257,14 @@ checksum = "0cc3a2344dafbe23a245241fe8b09735b521110d30fcefbbd5feb1797ca35d17"
 dependencies = [
  "backtrace",
  "bytes",
- "io-uring",
+ "io-uring 0.7.8",
  "libc",
  "mio",
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "slab",
- "socket2",
+ "socket2 0.5.10",
  "tokio-macros",
  "windows-sys 0.52.0",
 ]
@@ -2297,6 +2298,20 @@ checksum = "eca58d7bba4a75707817a2c44174253f9236b2d5fbd055602e9d5c07c139a047"
 dependencies = [
  "futures-core",
  "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-uring"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "748482e3e13584a34664a710168ad5068e8cb1d968aa4ffa887e83ca6dd27967"
+dependencies = [
+ "futures-util",
+ "io-uring 0.6.4",
+ "libc",
+ "slab",
+ "socket2 0.4.10",
  "tokio",
 ]
 
@@ -2520,6 +2535,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "winapi"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+dependencies = [
+ "winapi-i686-pc-windows-gnu",
+ "winapi-x86_64-pc-windows-gnu",
+]
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+
+[[package]]
 name = "windows-core"
 version = "0.61.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2666,7 +2703,7 @@ version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
- "bitflags",
+ "bitflags 2.9.1",
 ]
 
 [[package]]
