@@ -28,8 +28,8 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
         .into_iter()
         .fold(chain, |chain, domain| chain.guard(domain));
 
+    let spec = Spec { config };
     for directive in config.directives.iter() {
-        let spec = Spec { config };
         let location = directive.location.clone().unwrap_or_default();
         let prefix = location.trim_start_matches('/');
 
@@ -39,11 +39,11 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
             .fold(Chain::new(prefix), |chain, m| chain.link(m.link(&spec)))
             .into();
 
-        link = config.middleware.modsecurity(link, &spec);
-        link = config.middleware.rewrite(link, &spec);
+        link = directive.middleware.wrap(link, &spec);
         chain.push_link(link);
     }
 
+    chain = config.middleware.wrap(chain, &spec);
     if config.sanitize_errors.unwrap_or(true) {
         chain = chain.wrap(actix_sanitize::Sanitizer::default());
     }

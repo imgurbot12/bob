@@ -3,12 +3,12 @@
 use actix_chain::Link;
 use serde::Deserialize;
 
-use super::Spec;
+use super::{Middleware, Spec};
 
 /// Server specific configuration modules for request processing.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "module", deny_unknown_fields)]
-pub enum ModulesConfig {
+pub enum Module {
     /// Configuration for buitltin redirect service.
     #[serde(alias = "redirect")]
     Redirect(redirect::Config),
@@ -26,17 +26,17 @@ pub enum ModulesConfig {
     FastCGI(fastcgi::Config),
 }
 
-impl ModulesConfig {
+impl Module {
     /// Build [`actix_chain::Link`] from the module configuration.
     pub fn link(&self, spec: &Spec) -> Link {
         match self {
-            Self::Redirect(cfg) => Link::new(cfg.factory()),
+            Self::Redirect(cfg) => cfg.link(spec),
             #[cfg(feature = "fileserver")]
-            Self::FileServer(cfg) => Link::new(cfg.factory(spec)),
+            Self::FileServer(cfg) => cfg.link(spec),
             #[cfg(feature = "rproxy")]
-            Self::ReverseProxy(cfg) => Link::new(cfg.factory()),
+            Self::ReverseProxy(cfg) => cfg.link(spec),
             #[cfg(feature = "fastcgi")]
-            Self::FastCGI(cfg) => Link::new(cfg.factory(spec)),
+            Self::FastCGI(cfg) => cfg.link(spec),
         }
     }
 }
@@ -51,14 +51,16 @@ mod redirect {
 
     /// Redirect module configuration
     #[derive(Clone, Debug, Default, Deserialize)]
+    #[serde(deny_unknown_fields)]
     pub struct Config {
         /// Redirect URI
         redirect: String,
         /// Redirect status code
         ///
         /// Default is 302
-        #[serde(default)]
         status_code: Option<u16>,
+        /// Middleware to wrap the established module
+        middleware: Middleware,
     }
 
     impl Config {
@@ -74,6 +76,12 @@ mod redirect {
                 builder
             })
         }
+
+        /// Produce [`actix_chain::Link`] from config.
+        #[inline]
+        pub fn link(&self, spec: &Spec) -> Link {
+            self.middleware.wrap(Link::new(self.factory()), spec)
+        }
     }
 }
 
@@ -86,7 +94,7 @@ mod fileserver {
 
     /// File-Server module configuration.
     #[derive(Clone, Debug, Default, Deserialize)]
-    #[serde(default)]
+    #[serde(default, deny_unknown_fields)]
     pub struct Config {
         /// Root filepath for serving files
         ///
@@ -99,7 +107,9 @@ mod fileserver {
         /// Size Threshold for Asyncly Processing Files
         ///
         /// Default is u16::MAX (65_365)
-        size_threshold: Option<u64>,
+        async_threshold: Option<u64>,
+        /// Middleware to wrap the established module
+        middleware: Middleware,
     }
 
     impl Config {
@@ -111,7 +121,7 @@ mod fileserver {
                 .or(spec.config.root.clone())
                 .unwrap_or_else(|| PathBuf::from("."));
             let mut files = Files::new("", root)
-                .set_size_threshold(self.size_threshold.unwrap_or(u16::MAX as u64));
+                .set_size_threshold(self.async_threshold.unwrap_or(u16::MAX as u64));
             if self.hidden_files {
                 files = files.use_hidden_files();
             }
@@ -119,6 +129,12 @@ mod fileserver {
                 .index
                 .iter()
                 .fold(files, |files, index| files.index_file(index))
+        }
+
+        /// Produce [`actix_chain::Link`] from config.
+        #[inline]
+        pub fn link(&self, spec: &Spec) -> Link {
+            self.middleware.wrap(Link::new(self.factory(spec)), spec)
         }
     }
 }
@@ -135,6 +151,7 @@ mod rproxy {
 
     /// Reverse-Proxy module configuration.
     #[derive(Clone, Debug, Deserialize)]
+    #[serde(deny_unknown_fields)]
     pub struct Config {
         /// Proxy resolution URL.
         resolve: Uri,
@@ -158,6 +175,8 @@ mod rproxy {
         ///
         /// Default is true
         verify_ssl: Option<bool>,
+        /// Middleware to wrap the established module
+        middleware: Middleware,
     }
 
     impl Config {
@@ -178,6 +197,12 @@ mod rproxy {
                 .finish();
             RevProxy::new("", &self.resolve.0).with_client(client)
         }
+
+        /// Produce [`actix_chain::Link`] from config.
+        #[inline]
+        pub fn link(&self, spec: &Spec) -> Link {
+            self.middleware.wrap(Link::new(self.factory()), spec)
+        }
     }
 }
 
@@ -190,6 +215,7 @@ mod fastcgi {
 
     /// FastCGI module configuration.
     #[derive(Clone, Debug, Deserialize)]
+    #[serde(deny_unknown_fields)]
     pub struct Config {
         /// FastCGI socket connection URI.
         connect: String,
@@ -197,6 +223,8 @@ mod fastcgi {
         ///
         /// Overrides [`crate::config::ServerConfig::root`].
         root: Option<PathBuf>,
+        /// Middleware to wrap the established module
+        middleware: Middleware,
     }
 
     impl Config {
@@ -212,6 +240,12 @@ mod fastcgi {
                 .index
                 .iter()
                 .fold(fastcgi, |fastcgi, index| fastcgi.index_file(index))
+        }
+
+        /// Produce [`actix_chain::Link`] from config.
+        #[inline]
+        pub fn link(&self, spec: &Spec) -> Link {
+            self.middleware.wrap(Link::new(self.factory(spec)), spec)
         }
     }
 }

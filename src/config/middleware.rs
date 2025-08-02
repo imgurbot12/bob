@@ -1,4 +1,4 @@
-use actix_chain::Link;
+use actix_chain::Wrappable;
 use serde::Deserialize;
 
 use super::Spec;
@@ -6,7 +6,7 @@ use super::Spec;
 /// Server specific middleware configuration.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct MiddlewareConfig {
+pub struct Middleware {
     /// Configuration for [`actix_modsecurity`] Middleware.
     #[cfg(feature = "modsecurity")]
     #[serde(alias = "modsecurity")]
@@ -22,24 +22,31 @@ macro_rules! impl_init {
         #[cfg(feature = $feature)]
         #[inline]
         #[doc = concat!("Wrap an existing link with ", $feature, " middleware.")]
-        pub fn $attr(&self, link: Link, spec: &Spec) -> Link {
+        pub fn $attr<W: Wrappable>(&self, wrap: W, spec: &Spec) -> W {
             match self.$attr.as_ref() {
-                Some(attr) => link.wrap(attr.factory(spec)),
-                None => link,
+                Some(attr) => wrap.wrap_with(attr.factory(spec)),
+                None => wrap,
             }
         }
         #[cfg(not(feature = $feature))]
         #[inline]
         #[doc = concat!("Identity function for disabled middleware: ", $feature)]
-        pub fn $attr(&self, link: Link, _spec: &Spec) -> Link {
-            link
+        pub fn $attr<W: Wrappable>(&self, wrap: W, _spec: &Spec) -> W {
+            wrap
         }
     };
 }
 
-impl MiddlewareConfig {
+impl Middleware {
     impl_init!(modsecurity, "modsecurity");
     impl_init!(rewrite, "rewrite");
+
+    /// Wrap Chain/Link in all of the established middleware.
+    pub fn wrap<W: Wrappable>(&self, mut wrap: W, spec: &Spec) -> W {
+        wrap = self.modsecurity(wrap, &spec);
+        wrap = self.rewrite(wrap, &spec);
+        wrap
+    }
 }
 
 #[cfg(feature = "modsecurity")]

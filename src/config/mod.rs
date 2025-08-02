@@ -9,8 +9,8 @@ use serde::{Deserialize, de::Error};
 mod middleware;
 mod modules;
 
-pub use middleware::MiddlewareConfig;
-pub use modules::ModulesConfig;
+pub use middleware::Middleware;
+pub use modules::Module;
 
 /// Read all server configurations from a config file.
 pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
@@ -21,8 +21,6 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
         false => Ok(configs),
     }
 }
-
-//TODO: implement index retry support middlware.
 
 /// Server specific configuration settings.
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -38,7 +36,7 @@ pub struct ServerConfig {
     /// requests with `Host` set to the relevant matchers.
     pub server_name: Vec<DomainMatch>,
     /// Configuration settings for middlware within server instance.
-    pub middleware: MiddlewareConfig,
+    pub middleware: Middleware,
     /// Request handling directives associated with server instance.
     pub directives: Vec<DirectiveCfg>,
     /// Default root filepath for various request handling modules.
@@ -122,11 +120,13 @@ impl ListenCfg {
 #[serde(default)]
 pub struct DirectiveCfg {
     /// List of request modules configurations bound to directive.
-    pub modules: Vec<ModulesConfig>,
+    pub modules: Vec<Module>,
     /// Location associated with modules
     ///
     /// Default is `/`
     pub location: Option<String>,
+    /// Middleware to apply to all configured modules.
+    pub middleware: Middleware,
 }
 
 /// Time duration parsed from human-readable format.
