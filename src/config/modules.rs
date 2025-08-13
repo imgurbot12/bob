@@ -60,6 +60,7 @@ mod redirect {
         /// Default is 302
         status_code: Option<u16>,
         /// Middleware to wrap the established module
+        #[serde(default)]
         middleware: Middleware,
     }
 
@@ -109,6 +110,7 @@ mod fileserver {
         /// Default is u16::MAX (65_365)
         async_threshold: Option<u64>,
         /// Middleware to wrap the established module
+        #[serde(default)]
         middleware: Middleware,
     }
 
@@ -141,7 +143,7 @@ mod fileserver {
 
 #[cfg(feature = "rproxy")]
 mod rproxy {
-    use std::sync::Arc;
+    use std::{collections::BTreeMap, sync::Arc};
 
     use super::*;
     use crate::config::{Duration, Uri, default_duration};
@@ -175,7 +177,14 @@ mod rproxy {
         ///
         /// Default is true
         verify_ssl: Option<bool>,
+        /// Upstream headers to send to server.
+        #[serde(default)]
+        upstream_headers: BTreeMap<String, String>,
+        /// Downstream headers to send to client.
+        #[serde(default)]
+        downstream_headers: BTreeMap<String, String>,
         /// Middleware to wrap the established module
+        #[serde(default)]
         middleware: Middleware,
     }
 
@@ -195,7 +204,16 @@ mod rproxy {
                 .timeout(default_duration(&self.timeout, 5))
                 .max_redirects(self.max_redirects.unwrap_or(0))
                 .finish();
-            RevProxy::new("", &self.resolve.0).with_client(client)
+            let mut proxy = RevProxy::new("", &self.resolve.0).with_client(client);
+            proxy = self
+                .upstream_headers
+                .iter()
+                .fold(proxy, |proxy, (k, v)| proxy.upstream_header(k, v));
+            proxy = self
+                .downstream_headers
+                .iter()
+                .fold(proxy, |proxy, (k, v)| proxy.downstream_header(k, v));
+            proxy
         }
 
         /// Produce [`actix_chain::Link`] from config.

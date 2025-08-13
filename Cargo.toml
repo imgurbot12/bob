@@ -5,12 +5,13 @@ edition = "2024"
 
 [features]
 default     = ['fileserver', 'rproxy', 'fastcgi', 'middleware']
-middleware  = ['modsecurity', 'rewrite']
+middleware  = ['authn', 'modsecurity', 'rewrite']
 fileserver  = ['dep:actix-files']
 rproxy      = ['dep:actix-revproxy', 'dep:awc']
 fastcgi     = ['dep:actix-fastcgi']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
+authn       = ['dep:actix-authn', 'dep:actix-session']
 
 [profile.release]
 codegen-units = 1
@@ -18,6 +19,7 @@ lto = true
 panic = "abort"
 
 [dependencies]
+actix-authn = { version = "0.1.0", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-chain = { version = "0.1.0", git = "https://github.com/imgurbot12/actix-services.git" }
 actix-fastcgi = { version = "0.1.0", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-files = { version = "0.6.6", git = "https://github.com/imgurbot12/actix-web.git", branch = "develop", optional = true }
@@ -26,6 +28,7 @@ actix-revproxy = { version = "0.2.0", optional = true, features = ["rustls-0_23"
 actix-rewrite = { version = "0.1.1", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-sanitize = { version = "0.1.0", git = "https://github.com/imgurbot12/actix-services.git" }
 actix-service = "2.0.3"
+actix-session = { version = "0.10.1", optional = true, features = ["cookie-session"] }
 actix-tls = { version = "3.4.0", features = ["rustls-0_23-webpki-roots"] }
 actix-web = { version = "4.11.0", features = ["experimental-io-uring", "rustls-0_23"] }
 anyhow = "1.0.98"
