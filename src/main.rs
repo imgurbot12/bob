@@ -10,6 +10,48 @@ mod modules;
 
 use config::{Config, ListenCfg, SSLCfg};
 
+//TODO: integrate ipware directly as real-ip extractor?
+// can u overwrite remote-addr in service?
+//
+// would it be better to use the `extra_data` method?
+// (that would likely require a feature for all services to support)
+
+//TODO: modify middleware construction to control order of wrapping?
+// (allows much tighter controls of construction and operation.)
+// (mayhaps even co-mingle with modules, so they can be constructed in a flat list?)
+
+//TODO: confirm fastcgi has its own timeout (allow config??)
+//TODO: confirm rev-proxy has its own timeout (allow config.)
+
+//TODO: look into logging configuration for config,
+// but also to see if u can speed up operations to avoid slowdown.
+
+//TODO: ip whitelist/blacklist middleware implementation
+//TODO: ratelimitter middleware
+//TODO: timeout middleware
+//TODO: simple bot detector/challenger system? - anubis lite
+//TODO: configurable static-response module
+// (status, headers, body)
+
+//TODO: metrics/healthcheck module
+// (with configurable secure access)
+
+//TODO: cli sub-commands intended for simple configurations
+// like `caddy fileserver` / `caddy reverse-proxy` / etc...
+// - fileserver
+// - revproxy
+// - fastcgi
+// - static
+// - redirect
+//  (all the modules basically...)
+//  (fileserver should auto-open browser when tty)
+//  (info logging should probably be enabled by default)
+
+//TODO: hot-reload option for when config changes?
+//TODO: daemonize option?
+
+/// The greatest of all reverse proxies, and
+/// written in 🦀 (so you KNOW ITS GOOD 👌)
 #[derive(Debug, Parser)]
 struct Cli {
     config: Option<PathBuf>,
