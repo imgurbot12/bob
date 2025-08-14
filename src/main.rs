@@ -1,24 +1,23 @@
-use std::path::PathBuf;
-
 use actix_chain::{Chain, Link};
 use actix_web::{App, HttpServer, middleware::Logger};
 use anyhow::{Context, Result};
 use clap::Parser;
 
-pub mod config;
-pub mod tls;
+mod cli;
+mod config;
+mod tls;
 
 use crate::config::{ServerConfig, Spec};
+
+//TODO: existing logging middleware does not log errors.
+// look into alternatives or make a PR?
+// https://github.com/actix/actix-web/issues/1051
 
 //TODO: integrate ipware directly as real-ip extractor?
 // can u overwrite remote-addr in service?
 //
 // would it be better to use the `extra_data` method?
 // (that would likely require a feature for all services to support)
-
-//TODO: modify middleware construction to control order of wrapping?
-// (allows much tighter controls of construction and operation.)
-// (mayhaps even co-mingle with modules, so they can be constructed in a flat list?)
 
 //TODO: confirm fastcgi has its own timeout (allow config??)
 //TODO: confirm rev-proxy has its own timeout (allow config.)
@@ -49,15 +48,6 @@ use crate::config::{ServerConfig, Spec};
 
 //TODO: hot-reload option for when config changes?
 //TODO: daemonize option?
-
-/// The greatest of all reverse proxies, and
-/// written in 🦀 (so you KNOW ITS GOOD 👌)
-#[derive(Debug, Parser)]
-struct Cli {
-    /// Path of configuration to load (default: ./config.yaml).
-    #[clap(short, long)]
-    config: Option<PathBuf>,
-}
 
 /// Assemble [`actix_chain::Chain`] from server configuration instance.
 fn assemble_chain(config: &ServerConfig) -> Chain {
@@ -98,11 +88,17 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    env_logger::builder()
+        .format_target(false)
+        .filter(Some("bob"), log::LevelFilter::Info)
+        .filter(
+            Some("actix_web::middleware::logger"),
+            log::LevelFilter::Info,
+        )
+        .init();
 
-    let cli = Cli::parse();
-    let path = cli.config.unwrap_or_else(|| PathBuf::from("./config.yaml"));
-    let config = config::read_config(&path)?;
+    let cli = cli::Cli::parse();
+    let config: cli::Config = cli.try_into()?;
 
     let sconfig = config.clone();
     let mut server = HttpServer::new(move || {
@@ -118,7 +114,10 @@ async fn main() -> Result<()> {
         .flat_map(|cfg| cfg.listen.iter())
         .filter(|listen| listen.ssl.is_none())
         .map(|addr| addr.address())
-        .try_fold(server, |s, addr| s.bind(addr))?;
+        .try_fold(server, |s, addr| {
+            log::info!("spawning listener {addr:?}");
+            s.bind(addr)
+        })?;
 
     let sslcfg = tls::server::build_tls_config(&config)?;
     server = config
@@ -127,8 +126,11 @@ async fn main() -> Result<()> {
         .flat_map(|cfg| cfg.listen.iter())
         .filter(|listen| listen.ssl.is_some())
         .map(|addr| addr.address())
-        .try_fold(server, |s, addr| s.bind_rustls_0_23(addr, sslcfg.clone()))?;
+        .try_fold(server, |s, addr| {
+            log::info!("spawning tls listener {addr:?}");
+            s.bind_rustls_0_23(addr, sslcfg.clone())
+        })?;
 
-    log::info!("spawning server");
+    log::info!("server listening and ready!");
     server.run().await.context("server spawn failed")
 }

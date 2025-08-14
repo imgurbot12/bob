@@ -11,10 +11,10 @@ use super::Spec;
 pub struct Module {
     /// Module specific configuration.
     #[serde(flatten)]
-    module: ModuleConfig,
+    pub module: ModuleConfig,
     /// Override of [`actix_chain::Link::next`] behavior.
     #[serde(default)]
-    next: Option<Vec<u16>>,
+    pub next: Option<Vec<u16>>,
 }
 
 impl Module {
@@ -23,11 +23,10 @@ impl Module {
     pub fn link(&self, spec: &Spec) -> Link {
         let mut link = self.module.link(spec);
         if let Some(next) = self.next.as_ref() {
-            println!("next! {next:?}");
             link = next
                 .iter()
                 .filter_map(|code| StatusCode::from_u16(*code).ok())
-                .map(|code| next::IsStatus(code))
+                .map(next::IsStatus)
                 .fold(link, |link, code| link.next(code));
         }
         link
@@ -70,7 +69,7 @@ impl ModuleConfig {
     }
 }
 
-mod redirect {
+pub mod redirect {
     use super::*;
 
     use actix_web::{
@@ -113,7 +112,7 @@ mod redirect {
 }
 
 #[cfg(feature = "fileserver")]
-mod fileserver {
+pub mod fileserver {
     use super::*;
 
     use actix_files::Files;
@@ -126,15 +125,19 @@ mod fileserver {
         /// Root filepath for serving files
         ///
         /// Overrides [`crate::config::ServerConfig::root`]
-        root: Option<PathBuf>,
+        pub root: Option<PathBuf>,
         /// Allow serving hidden files that begin with a `.`
         ///
         /// Default is false.
-        hidden_files: bool,
+        pub hidden_files: bool,
+        /// Allow director indexing to browse files.
+        ///
+        /// Default is false
+        pub index_files: bool,
         /// Size Threshold for Asyncly Processing Files
         ///
         /// Default is u16::MAX (65_365)
-        async_threshold: Option<u64>,
+        pub async_threshold: Option<u64>,
     }
 
     impl Config {
@@ -149,6 +152,9 @@ mod fileserver {
                 .set_size_threshold(self.async_threshold.unwrap_or(u16::MAX as u64));
             if self.hidden_files {
                 files = files.use_hidden_files();
+            }
+            if self.index_files {
+                files = files.show_files_listing();
             }
             spec.config
                 .index
@@ -165,7 +171,7 @@ mod fileserver {
 }
 
 #[cfg(feature = "rproxy")]
-mod rproxy {
+pub mod rproxy {
     use std::{collections::BTreeMap, sync::Arc};
 
     use super::*;
@@ -179,33 +185,38 @@ mod rproxy {
     #[serde(deny_unknown_fields)]
     pub struct Config {
         /// Proxy resolution URL.
-        resolve: Uri,
+        pub resolve: Uri,
+        /// Change host to upstream address host.
+        ///
+        /// Default is false
+        #[serde(default)]
+        pub change_host: bool,
         /// Max number of redirects allowed in client lookup.
         ///
         /// Default is 0.
-        max_redirects: Option<u8>,
+        pub max_redirects: Option<u8>,
         /// Initial Connection Window Size
         ///
         /// Default is `u16::MAX`
-        initial_conn_size: Option<u32>,
+        pub initial_conn_size: Option<u32>,
         /// Initial Window Size
         ///
         /// Default is `u16::MAX`
-        initial_window_size: Option<u32>,
+        pub initial_window_size: Option<u32>,
         /// Request timeout in seconds.
         ///
         /// Default is 5s
-        timeout: Option<Duration>,
+        pub timeout: Option<Duration>,
         /// Verify SSL Configuration
         ///
         /// Default is true
-        verify_ssl: Option<bool>,
+        pub verify_ssl: Option<bool>,
         /// Upstream headers to send to server.
         #[serde(default)]
-        upstream_headers: BTreeMap<String, String>,
+        pub upstream_headers: BTreeMap<String, String>,
         /// Downstream headers to send to client.
         #[serde(default)]
-        downstream_headers: BTreeMap<String, String>,
+        pub downstream_headers: BTreeMap<String, String>,
     }
 
     impl Config {
@@ -233,6 +244,9 @@ mod rproxy {
                 .downstream_headers
                 .iter()
                 .fold(proxy, |proxy, (k, v)| proxy.downstream_header(k, v));
+            if self.change_host {
+                proxy = proxy.change_host();
+            }
             proxy
         }
 
@@ -245,7 +259,7 @@ mod rproxy {
 }
 
 #[cfg(feature = "fastcgi")]
-mod fastcgi {
+pub mod fastcgi {
     use super::*;
 
     use actix_fastcgi::FastCGI;
@@ -256,11 +270,11 @@ mod fastcgi {
     #[serde(deny_unknown_fields)]
     pub struct Config {
         /// FastCGI socket connection URI.
-        connect: String,
+        pub connect: String,
         /// Document-Root assigned to FastCGI.
         ///
         /// Overrides [`crate::config::ServerConfig::root`].
-        root: Option<PathBuf>,
+        pub root: Option<PathBuf>,
     }
 
     impl Config {

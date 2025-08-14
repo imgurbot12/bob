@@ -1,6 +1,6 @@
 //! Configuration Serializer/Deserializer Types
 
-use std::{path::PathBuf, str::FromStr};
+use std::{net::SocketAddr, path::PathBuf, str::FromStr};
 
 use actix_chain::Chain;
 use actix_web::{guard::Guard, http::header};
@@ -10,11 +10,11 @@ use serde::{
     de::{self, Error, Unexpected},
 };
 
-mod middleware;
-mod modules;
+pub mod middleware;
+pub mod modules;
 
 pub use middleware::Middleware;
-pub use modules::Module;
+pub use modules::{Module, ModuleConfig};
 
 /// Read all server configurations from a config file.
 pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
@@ -121,9 +121,18 @@ impl ListenCfg {
     }
 }
 
+impl From<SocketAddr> for ListenCfg {
+    fn from(value: SocketAddr) -> Self {
+        Self {
+            port: value.port(),
+            host: Some(value.ip().to_string()),
+            ssl: None,
+        }
+    }
+}
+
 /// Module or Middleware Component
-#[derive(Debug, Clone, Deserialize)]
-#[serde(untagged, deny_unknown_fields)]
+#[derive(Debug, Clone)]
 pub enum Component {
     Middleware(Middleware),
     Module(Module),
@@ -136,6 +145,23 @@ impl Component {
             Component::Module(m) => chain.link(m.link(spec)),
             Component::Middleware(m) => m.wrap(chain, spec),
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for Component {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_yaml::Value::deserialize(deserializer)?;
+        Ok(match value.get("module").is_some() {
+            true => Component::Module(
+                serde_yaml::from_value::<Module>(value).map_err(D::Error::custom)?,
+            ),
+            false => Component::Middleware(
+                serde_yaml::from_value::<Middleware>(value).map_err(D::Error::custom)?,
+            ),
+        })
     }
 }
 
@@ -152,6 +178,18 @@ pub struct DirectiveCfg {
     ///
     /// Default is `/`
     pub location: Option<String>,
+}
+
+impl From<ModuleConfig> for DirectiveCfg {
+    fn from(value: ModuleConfig) -> Self {
+        Self {
+            location: None,
+            construct: Components(vec![Component::Module(Module {
+                module: value,
+                next: None,
+            })]),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
