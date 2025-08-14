@@ -37,9 +37,9 @@ use crate::config::{ServerConfig, Spec};
 
 //TODO: cli sub-commands intended for simple configurations
 // like `caddy fileserver` / `caddy reverse-proxy` / etc...
-// - fileserver
-// - revproxy
-// - fastcgi
+// - fileserver [DONE]
+// - revproxy   [DONE]
+// - fastcgi    [DONE]
 // - static
 // - redirect
 //  (all the modules basically...)
@@ -90,6 +90,7 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
 async fn main() -> Result<()> {
     env_logger::builder()
         .format_target(false)
+        .filter(None, log::LevelFilter::Warn)
         .filter(Some("bob"), log::LevelFilter::Info)
         .filter(
             Some("actix_web::middleware::logger"),

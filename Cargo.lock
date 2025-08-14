@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "actix-authn"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-session",
  "actix-web",
@@ -19,7 +19,7 @@ dependencies = [
 [[package]]
 name = "actix-chain"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -47,7 +47,7 @@ dependencies = [
 [[package]]
 name = "actix-fastcgi"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-http",
@@ -164,7 +164,7 @@ dependencies = [
 [[package]]
 name = "actix-modsecurity"
 version = "0.1.2"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-http",
  "actix-service",
@@ -178,7 +178,7 @@ dependencies = [
 [[package]]
 name = "actix-revproxy"
 version = "0.2.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-service",
@@ -193,7 +193,7 @@ dependencies = [
 [[package]]
 name = "actix-rewrite"
 version = "0.1.1"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-http",
  "actix-service",
@@ -233,7 +233,7 @@ dependencies = [
 [[package]]
 name = "actix-sanitize"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#f97a1827cc758db591196a2317f3c9a760dd699a"
+source = "git+https://github.com/imgurbot12/actix-services.git#89c5ac15df03d856078f9f33581282f55280c750"
 dependencies = [
  "actix-web",
  "futures-core",
