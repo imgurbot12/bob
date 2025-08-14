@@ -3,61 +3,40 @@ use serde::Deserialize;
 
 use super::Spec;
 
-/// Server specific middleware configuration.
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Middleware {
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "middleware", deny_unknown_fields)]
+pub enum Middleware {
     /// Configuration for [`actix_authn::basic::BasicAuthSession`] Middleware.
     #[cfg(feature = "authn")]
     #[serde(alias = "basic_auth")]
-    auth_basic: Option<auth_basic::Config>,
+    AuthBasic(auth_basic::Config),
     /// Configuration for [`actix_authn::basic::BasicAuthSession`] Middleware.
     #[cfg(feature = "authn")]
     #[serde(alias = "basic_auth_session")]
-    auth_session: Option<auth_session::Config>,
+    AuthSession(auth_session::Config),
     /// Configuration for [`actix_modsecurity`] Middleware.
     #[cfg(feature = "modsecurity")]
     #[serde(alias = "modsecurity")]
-    modsecurity: Option<modsecurity::Config>,
+    ModSecurity(modsecurity::Config),
     /// Configuration for [`actix_rewrite`] Middleware.
     #[cfg(feature = "rewrite")]
     #[serde(alias = "rewrite")]
-    rewrite: Option<rewrite::Config>,
-}
-
-macro_rules! impl_init {
-    ($attr:ident, $feature:literal) => {
-        #[cfg(feature = $feature)]
-        #[inline]
-        #[doc = concat!("Wrap an existing link with ", $feature, " middleware.")]
-        pub fn $attr<W: Wrappable>(&self, wrap: W, spec: &Spec) -> W {
-            match self.$attr.as_ref() {
-                Some(attr) => attr.wrap(wrap, spec),
-                None => wrap,
-            }
-        }
-        #[cfg(not(feature = $feature))]
-        #[inline]
-        #[doc = concat!("Identity function for disabled middleware: ", $feature)]
-        pub fn $attr<W: Wrappable>(&self, wrap: W, _spec: &Spec) -> W {
-            wrap
-        }
-    };
+    Rewrite(rewrite::Config),
 }
 
 impl Middleware {
-    impl_init!(auth_basic, "authn");
-    impl_init!(auth_session, "authn");
-    impl_init!(modsecurity, "modsecurity");
-    impl_init!(rewrite, "rewrite");
-
     /// Wrap Chain/Link in all of the established middleware.
-    pub fn wrap<W: Wrappable>(&self, mut wrap: W, spec: &Spec) -> W {
-        wrap = self.modsecurity(wrap, spec);
-        wrap = self.auth_basic(wrap, spec);
-        wrap = self.auth_session(wrap, spec);
-        wrap = self.rewrite(wrap, spec);
-        wrap
+    pub fn wrap<W: Wrappable>(&self, wrap: W, spec: &Spec) -> W {
+        match self {
+            #[cfg(feature = "authn")]
+            Self::AuthBasic(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "authn")]
+            Self::AuthSession(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "modsecurity")]
+            Self::ModSecurity(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "rewrite")]
+            Self::Rewrite(config) => config.wrap(wrap, spec),
+        }
     }
 }
 

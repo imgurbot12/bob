@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use actix_chain::Chain;
+use actix_chain::{Chain, Link};
 use actix_web::{App, HttpServer, middleware::Logger};
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -73,17 +73,19 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
         let location = directive.location.clone().unwrap_or_default();
         let prefix = location.trim_start_matches('/');
 
-        let mut link: actix_chain::Link = directive
-            .modules
+        let link: Link = directive
+            .construct
             .iter()
-            .fold(Chain::new(prefix), |chain, m| chain.link(m.link(&spec)))
+            .fold(Chain::new(prefix), |chain, c| c.apply(chain, &spec))
             .into();
 
-        link = directive.middleware.wrap(link, &spec);
         chain.push_link(link);
     }
 
-    chain = config.middleware.wrap(chain, &spec);
+    chain = config
+        .middleware
+        .iter()
+        .fold(chain, |chain, m| m.wrap(chain, &spec));
     if config.sanitize_errors.unwrap_or(true) {
         chain = chain.wrap(actix_sanitize::Sanitizer::default());
     }

@@ -1,14 +1,43 @@
 //! Modules Configuration
 
-use actix_chain::Link;
+use actix_chain::{Link, next};
+use actix_web::http::StatusCode;
 use serde::Deserialize;
 
-use super::{Middleware, Spec};
+use super::Spec;
 
 /// Server specific configuration modules for request processing.
 #[derive(Clone, Debug, Deserialize)]
+pub struct Module {
+    /// Module specific configuration.
+    #[serde(flatten)]
+    module: ModuleConfig,
+    /// Override of [`actix_chain::Link::next`] behavior.
+    #[serde(default)]
+    next: Option<Vec<u16>>,
+}
+
+impl Module {
+    /// Build [`actix_chain::Link`] from the module configuration.
+    #[inline]
+    pub fn link(&self, spec: &Spec) -> Link {
+        let mut link = self.module.link(spec);
+        if let Some(next) = self.next.as_ref() {
+            println!("next! {next:?}");
+            link = next
+                .iter()
+                .filter_map(|code| StatusCode::from_u16(*code).ok())
+                .map(|code| next::IsStatus(code))
+                .fold(link, |link, code| link.next(code));
+        }
+        link
+    }
+}
+
+/// Configuration modules for request processing.
+#[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "module", deny_unknown_fields)]
-pub enum Module {
+pub enum ModuleConfig {
     /// Configuration for buitltin redirect service.
     #[serde(alias = "redirect")]
     Redirect(redirect::Config),
@@ -26,7 +55,7 @@ pub enum Module {
     FastCGI(fastcgi::Config),
 }
 
-impl Module {
+impl ModuleConfig {
     /// Build [`actix_chain::Link`] from the module configuration.
     pub fn link(&self, spec: &Spec) -> Link {
         match self {
@@ -59,9 +88,6 @@ mod redirect {
         ///
         /// Default is 302
         status_code: Option<u16>,
-        /// Middleware to wrap the established module
-        #[serde(default)]
-        middleware: Middleware,
     }
 
     impl Config {
@@ -80,8 +106,8 @@ mod redirect {
 
         /// Produce [`actix_chain::Link`] from config.
         #[inline]
-        pub fn link(&self, spec: &Spec) -> Link {
-            self.middleware.wrap(Link::new(self.factory()), spec)
+        pub fn link(&self, _spec: &Spec) -> Link {
+            Link::new(self.factory())
         }
     }
 }
@@ -109,9 +135,6 @@ mod fileserver {
         ///
         /// Default is u16::MAX (65_365)
         async_threshold: Option<u64>,
-        /// Middleware to wrap the established module
-        #[serde(default)]
-        middleware: Middleware,
     }
 
     impl Config {
@@ -136,7 +159,7 @@ mod fileserver {
         /// Produce [`actix_chain::Link`] from config.
         #[inline]
         pub fn link(&self, spec: &Spec) -> Link {
-            self.middleware.wrap(Link::new(self.factory(spec)), spec)
+            Link::new(self.factory(spec))
         }
     }
 }
@@ -183,9 +206,6 @@ mod rproxy {
         /// Downstream headers to send to client.
         #[serde(default)]
         downstream_headers: BTreeMap<String, String>,
-        /// Middleware to wrap the established module
-        #[serde(default)]
-        middleware: Middleware,
     }
 
     impl Config {
@@ -218,8 +238,8 @@ mod rproxy {
 
         /// Produce [`actix_chain::Link`] from config.
         #[inline]
-        pub fn link(&self, spec: &Spec) -> Link {
-            self.middleware.wrap(Link::new(self.factory()), spec)
+        pub fn link(&self, _spec: &Spec) -> Link {
+            Link::new(self.factory())
         }
     }
 }
@@ -241,8 +261,6 @@ mod fastcgi {
         ///
         /// Overrides [`crate::config::ServerConfig::root`].
         root: Option<PathBuf>,
-        /// Middleware to wrap the established module
-        middleware: Middleware,
     }
 
     impl Config {
@@ -263,7 +281,7 @@ mod fastcgi {
         /// Produce [`actix_chain::Link`] from config.
         #[inline]
         pub fn link(&self, spec: &Spec) -> Link {
-            self.middleware.wrap(Link::new(self.factory(spec)), spec)
+            Link::new(self.factory(spec))
         }
     }
 }

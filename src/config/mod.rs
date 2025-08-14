@@ -2,9 +2,13 @@
 
 use std::{path::PathBuf, str::FromStr};
 
+use actix_chain::Chain;
 use actix_web::{guard::Guard, http::header};
 use anyhow::{Context, Result, anyhow};
-use serde::{Deserialize, de::Error};
+use serde::{
+    Deserialize,
+    de::{self, Error, Unexpected},
+};
 
 mod middleware;
 mod modules;
@@ -36,7 +40,7 @@ pub struct ServerConfig {
     /// requests with `Host` set to the relevant matchers.
     pub server_name: Vec<DomainMatch>,
     /// Configuration settings for middlware within server instance.
-    pub middleware: Middleware,
+    pub middleware: Vec<Middleware>,
     /// Request handling directives associated with server instance.
     pub directives: Vec<DirectiveCfg>,
     /// Default root filepath for various request handling modules.
@@ -86,6 +90,7 @@ impl FromStr for DomainMatch {
 
 /// TLS Configuration for server listener.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SSLCfg {
     /// TLS Certificate public key.
     pub certificate: PathBuf,
@@ -95,6 +100,7 @@ pub struct SSLCfg {
 
 /// Server listener bindings configuration.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ListenCfg {
     /// Port server will bind to.
     pub port: u16,
@@ -115,18 +121,70 @@ impl ListenCfg {
     }
 }
 
+/// Module or Middleware Component
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged, deny_unknown_fields)]
+pub enum Component {
+    Middleware(Middleware),
+    Module(Module),
+}
+
+impl Component {
+    /// Apply component to Chain.
+    pub fn apply(&self, chain: Chain, spec: &Spec) -> Chain {
+        match &self {
+            Component::Module(m) => chain.link(m.link(spec)),
+            Component::Middleware(m) => m.wrap(chain, spec),
+        }
+    }
+}
+
 /// Group of request modules bound to a specific uri path prefix.
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(default)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DirectiveCfg {
-    /// List of request modules configurations bound to directive.
-    pub modules: Vec<Module>,
+    /// List of additional web components bound to directive.
+    ///
+    /// Items are constructed in the order they're given
+    /// meaning middlewares only wrap elements defined before them.
+    pub construct: Components,
     /// Location associated with modules
     ///
     /// Default is `/`
     pub location: Option<String>,
-    /// Middleware to apply to all configured modules.
-    pub middleware: Middleware,
+}
+
+#[derive(Debug, Clone)]
+pub struct Components(Vec<Component>);
+
+impl Components {
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = &Component> {
+        self.0.iter()
+    }
+}
+
+impl<'de> Deserialize<'de> for Components {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        <Vec<Component> as de::Deserialize>::deserialize(deserializer).and_then(|inner| {
+            if inner.is_empty() {
+                return Err(de::Error::invalid_length(
+                    inner.len(),
+                    &"must contain a module",
+                ));
+            }
+            if !matches!(inner[0], Component::Module(_)) {
+                return Err(de::Error::invalid_type(
+                    Unexpected::StructVariant,
+                    &"first component must be a module",
+                ));
+            }
+            Ok(Components(inner))
+        })
+    }
 }
 
 /// Time duration parsed from human-readable format.
