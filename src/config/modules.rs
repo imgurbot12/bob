@@ -40,6 +40,9 @@ pub enum ModuleConfig {
     /// Configuration for buitltin redirect service.
     #[serde(alias = "redirect")]
     Redirect(redirect::Config),
+    /// Configuration for builtin static response service.
+    #[serde(alias = "static")]
+    Static(rstatic::Config),
     /// Configuration for [`actix_files`] service.
     #[cfg(feature = "fileserver")]
     #[serde(alias = "fileserver")]
@@ -59,6 +62,7 @@ impl ModuleConfig {
     pub fn link(&self, spec: &Spec) -> Link {
         match self {
             Self::Redirect(cfg) => cfg.link(spec),
+            Self::Static(cfg) => cfg.link(spec),
             #[cfg(feature = "fileserver")]
             Self::FileServer(cfg) => cfg.link(spec),
             #[cfg(feature = "rproxy")]
@@ -100,6 +104,63 @@ pub mod redirect {
                 let mut builder = HttpResponse::build(status);
                 builder.insert_header((header::LOCATION, uri.clone()));
                 builder
+            })
+        }
+
+        /// Produce [`actix_chain::Link`] from config.
+        #[inline]
+        pub fn link(&self, _spec: &Spec) -> Link {
+            Link::new(self.factory())
+        }
+    }
+}
+
+pub mod rstatic {
+    use std::collections::BTreeMap;
+
+    use actix_web::{HttpResponse, Route};
+
+    use super::*;
+
+    /// Static response module configuration
+    #[derive(Clone, Debug, Default, Deserialize)]
+    #[serde(default, deny_unknown_fields)]
+    pub struct Config {
+        /// Static body content
+        body: Option<String>,
+        /// Content type override
+        ///
+        /// Default is text/html
+        content_type: Option<String>,
+        /// Headers to append to response
+        headers: BTreeMap<String, String>,
+        /// Content status code
+        ///
+        /// Default is 200
+        status_code: Option<u16>,
+    }
+
+    impl Config {
+        /// Produce [`actix_web::Route`] from config.
+        pub fn factory(&self) -> Route {
+            let status_code = self.status_code.unwrap_or(200);
+            let ctype = self
+                .content_type
+                .clone()
+                .unwrap_or_else(|| "text/html; charset=UTF-8".to_owned());
+
+            let config = self.clone();
+            let status = StatusCode::from_u16(status_code).expect("invalid response status");
+            actix_web::web::get().to(move || {
+                let config = config.clone();
+                let mut builder = HttpResponse::build(status);
+                builder.insert_header(("Content-Type", ctype.clone()));
+                config
+                    .headers
+                    .clone()
+                    .into_iter()
+                    .fold(&mut builder, |b, (h, v)| b.append_header((h, v)));
+                async move { builder.body(config.body.unwrap_or_default()) }
             })
         }
 

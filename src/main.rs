@@ -96,6 +96,7 @@ async fn main() -> Result<()> {
             Some("actix_web::middleware::logger"),
             log::LevelFilter::Info,
         )
+        .parse_env("BOB_LOG")
         .init();
 
     let cli = cli::Cli::parse();

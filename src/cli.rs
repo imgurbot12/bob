@@ -36,6 +36,11 @@ impl TryInto<Config> for Cli {
             Command::Fastcgi(cfg) => cfg.try_into(),
             #[cfg(feature = "rproxy")]
             Command::ReverseProxy(cfg) => cfg.try_into(),
+            #[cfg(feature = "authn")]
+            Command::Passwd(cfg) => {
+                cfg.execute()?;
+                unreachable!();
+            }
         }?;
         config.iter_mut().for_each(|config| {
             config.sanitize_errors = config.sanitize_errors.or(self.sanitize);
@@ -58,6 +63,9 @@ enum Command {
     /// A quick reverse proxy
     #[cfg(feature = "rproxy")]
     ReverseProxy(RevProxyCmd),
+    /// Generate a hashed password for basic-auth
+    #[cfg(feature = "authn")]
+    Passwd(GenPasswdCmd),
 }
 
 impl Default for Command {
@@ -95,6 +103,52 @@ impl TryInto<Config> for RunCmd {
 fn convert_addr(addr: &str) -> Result<Vec<ListenCfg>, anyhow::Error> {
     use std::net::ToSocketAddrs;
     Ok(addr.to_socket_addrs()?.map(|addr| addr.into()).collect())
+}
+
+#[cfg(feature = "authn")]
+#[derive(Args, Debug)]
+struct GenPasswdCmd {
+    /// Username to attach to passwd record
+    username: String,
+    /// Password to apply to passwd generation
+    #[clap(short, long)]
+    password: Option<String>,
+    /// Output for passwd generation
+    #[clap(short, long)]
+    output: Option<PathBuf>,
+}
+
+#[cfg(feature = "authn")]
+impl GenPasswdCmd {
+    fn execute(self) -> Result<(), anyhow::Error> {
+        use actix_authn::basic::crypt::bcrypt;
+        use rpassword::prompt_password;
+        use std::io::Write;
+
+        let password = if let Some(password) = self.password {
+            password
+        } else {
+            let password = prompt_password("Password: ").context("failed to read password")?;
+            let confirm =
+                prompt_password("Confirm Password: ").context("failed to confirm password")?;
+            if password != confirm {
+                return Err(anyhow::anyhow!("passwords do not match"));
+            }
+            password
+        };
+
+        let passwd = bcrypt::hash(password).context("failed to hash password")?;
+        let passwd = format!("{}:{}", self.username, passwd.as_str());
+        match self.output {
+            Some(output) => std::fs::write(output, passwd).context("failed to write password")?,
+            None => {
+                std::io::stdout()
+                    .write(passwd.as_bytes())
+                    .context("failed to write stdout")?;
+            }
+        };
+        std::process::exit(0);
+    }
 }
 
 #[cfg(feature = "fileserver")]
