@@ -99,8 +99,8 @@ async fn main() -> Result<()> {
         .parse_env("BOB_LOG")
         .init();
 
-    let cli = cli::Cli::parse();
-    let config: cli::Config = cli.try_into()?;
+    let cli = bob_cli::Cli::parse();
+    let config = cli::build_config(cli)?;
 
     let sconfig = config.clone();
     let mut server = HttpServer::new(move || {

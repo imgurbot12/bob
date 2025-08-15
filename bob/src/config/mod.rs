@@ -5,6 +5,7 @@ use std::{net::SocketAddr, path::PathBuf, str::FromStr};
 use actix_chain::Chain;
 use actix_web::{guard::Guard, http::header};
 use anyhow::{Context, Result, anyhow};
+use bob_cli::{Duration, Uri, de_fromstr};
 use serde::{
     Deserialize,
     de::{self, Error, Unexpected},
@@ -225,49 +226,7 @@ impl<'de> Deserialize<'de> for Components {
     }
 }
 
-/// Time duration parsed from human-readable format.
-///
-/// Example: `1h5m2s`
-#[derive(Clone, Debug)]
-pub struct Duration(pub(crate) std::time::Duration);
-
-impl FromStr for Duration {
-    type Err = humantime::DurationError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(humantime::parse_duration(s)?))
-    }
-}
-
-/// Resource URI object and parser.
-#[derive(Clone, Debug)]
-pub struct Uri(pub(crate) actix_web::http::Uri);
-
-impl FromStr for Uri {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(
-            actix_web::http::Uri::from_str(s).map_err(|e| e.to_string())?,
-        ))
-    }
-}
-
-macro_rules! de_fromstr {
-    ($s:ident) => {
-        impl<'de> Deserialize<'de> for $s {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                let s: String = Deserialize::deserialize(deserializer)?;
-                $s::from_str(&s).map_err(D::Error::custom)
-            }
-        }
-    };
-}
-
 de_fromstr!(DomainMatch);
-de_fromstr!(Duration);
-de_fromstr!(Uri);
 
 #[inline]
 pub fn default_duration(d: &Option<Duration>, default_secs: u64) -> std::time::Duration {
