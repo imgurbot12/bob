@@ -1,8 +1,12 @@
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
+
 use actix_chain::Wrappable;
 use serde::Deserialize;
 
 use super::Spec;
 
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "middleware", deny_unknown_fields)]
 pub enum Middleware {
@@ -50,6 +54,7 @@ mod auth_basic {
         basic::{Basic, BasicAuth},
     };
 
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Debug, Clone, Default, Deserialize)]
     #[serde(deny_unknown_fields)]
     pub struct Config {
@@ -106,6 +111,7 @@ mod auth_session {
         }
     }
 
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Debug, Clone, Default, Deserialize)]
     #[serde(deny_unknown_fields)]
     pub struct Config {
@@ -167,6 +173,7 @@ mod modsecurity {
     use actix_modsecurity::{Middleware, ModSecurity};
 
     /// Modsecurity middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Debug, Clone, Default, Deserialize)]
     #[serde(default, deny_unknown_fields)]
     pub struct Config {
@@ -214,6 +221,7 @@ mod rewrite {
     const SERVER_SOFTWARE: &str = concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION"));
 
     /// `mod_rewrite` middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Debug, Clone, Default, Deserialize)]
     #[serde(default, deny_unknown_fields)]
     pub struct Config {

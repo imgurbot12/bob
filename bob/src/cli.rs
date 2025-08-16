@@ -6,6 +6,13 @@ use crate::config::*;
 
 pub type Config = Vec<ServerConfig>;
 
+macro_rules! run_and_exit {
+    ($fn:expr) => {{
+        $fn?;
+        std::process::exit(0);
+    }};
+}
+
 /// Build configuration or run command based on cli settings.
 pub fn build_config(cli: Cli) -> Result<Config> {
     let mut config: Config = match cli.command.unwrap_or_default() {
@@ -17,10 +24,9 @@ pub fn build_config(cli: Cli) -> Result<Config> {
         #[cfg(feature = "rproxy")]
         Command::ReverseProxy(cfg) => rproxy_cmd(cfg),
         #[cfg(feature = "authn")]
-        Command::Passwd(cfg) => {
-            execute_passwd(cfg)?;
-            unreachable!();
-        }
+        Command::Passwd(cfg) => run_and_exit!(execute_passwd(cfg)),
+        #[cfg(feature = "schema")]
+        Command::Schema(cfg) => run_and_exit!(build_schema(cfg)),
     }?;
     config.iter_mut().for_each(|config| {
         config.sanitize_errors = config.sanitize_errors.or(cli.sanitize);
@@ -35,13 +41,13 @@ fn run_cmd(cmd: RunCmd) -> Result<Config> {
 
 #[cfg(any(feature = "fileserver", feature = "rproxy"))]
 #[inline]
-fn convert_addr(addr: &str) -> Result<Vec<ListenCfg>, anyhow::Error> {
+fn convert_addr(addr: &str) -> Result<Vec<ListenCfg>> {
     use std::net::ToSocketAddrs;
     Ok(addr.to_socket_addrs()?.map(|addr| addr.into()).collect())
 }
 
 #[cfg(feature = "authn")]
-fn execute_passwd(cmd: GenPasswdCmd) -> Result<(), anyhow::Error> {
+fn execute_passwd(cmd: GenPasswdCmd) -> Result<()> {
     use actix_authn::basic::crypt::bcrypt;
     use rpassword::prompt_password;
     use std::io::Write;
@@ -68,7 +74,18 @@ fn execute_passwd(cmd: GenPasswdCmd) -> Result<(), anyhow::Error> {
                 .context("failed to write stdout")?;
         }
     };
-    std::process::exit(0);
+    Ok(())
+}
+
+#[cfg(feature = "schema")]
+fn build_schema(cmd: SchemaCmd) -> Result<()> {
+    use std::io::Write;
+
+    let schema = schemars::schema_for!(Config);
+    let data = serde_json::to_string_pretty(&schema)?;
+    let mut file = std::fs::File::create(cmd.output)?;
+    write!(file, "{data}").context("failed to write schema")?;
+    Ok(())
 }
 
 #[cfg(feature = "fileserver")]

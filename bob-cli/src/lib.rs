@@ -1,5 +1,8 @@
 use std::{path::PathBuf, str::FromStr};
 
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
+
 use clap::{Args, Parser, Subcommand};
 use serde::de::Error;
 
@@ -35,6 +38,9 @@ pub enum Command {
     /// Generate a hashed password for basic-auth
     #[cfg(feature = "authn")]
     Passwd(GenPasswdCmd),
+    /// Generate json schema for documentation
+    #[cfg(feature = "schema")]
+    Schema(SchemaCmd),
 }
 
 impl Default for Command {
@@ -57,6 +63,13 @@ impl Default for RunCmd {
             config: PathBuf::from("./config.yaml"),
         }
     }
+}
+
+#[cfg(feature = "schema")]
+#[derive(Args, Debug)]
+pub struct SchemaCmd {
+    #[clap(short, long, default_value = "schema.json")]
+    pub output: PathBuf,
 }
 
 #[cfg(feature = "authn")]
@@ -152,6 +165,19 @@ impl FromStr for Header {
     }
 }
 
+#[cfg(feature = "schema")]
+impl JsonSchema for Header {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Header".into()
+    }
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        concat!(module_path!(), "::Header").into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({ "type": "string" })
+    }
+}
+
 /// Time duration parsed from human-readable format.
 ///
 /// Example: `1h5m2s`
@@ -166,6 +192,19 @@ impl FromStr for Duration {
     }
 }
 
+#[cfg(feature = "schema")]
+impl JsonSchema for Duration {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Duration".into()
+    }
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        concat!(module_path!(), "::Duration").into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({ "type": "string" })
+    }
+}
+
 /// Resource URI object and parser.
 #[derive(Clone, Debug)]
 pub struct Uri(pub actix_http::Uri);
@@ -176,6 +215,19 @@ impl FromStr for Uri {
         Ok(Self(
             actix_http::Uri::from_str(s).map_err(|e| e.to_string())?,
         ))
+    }
+}
+
+#[cfg(feature = "schema")]
+impl JsonSchema for Uri {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Uri".into()
+    }
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        concat!(module_path!(), "::Uri").into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({ "type": "string" })
     }
 }
 

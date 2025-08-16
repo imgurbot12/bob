@@ -1,5 +1,8 @@
 //! Modules Configuration
 
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
+
 use actix_chain::{Link, next};
 use actix_web::http::StatusCode;
 use serde::Deserialize;
@@ -7,6 +10,7 @@ use serde::Deserialize;
 use super::Spec;
 
 /// Server specific configuration modules for request processing.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Clone, Debug, Deserialize)]
 pub struct Module {
     /// Module specific configuration.
@@ -34,6 +38,7 @@ impl Module {
 }
 
 /// Configuration modules for request processing.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "module", deny_unknown_fields)]
 pub enum ModuleConfig {
@@ -82,6 +87,7 @@ pub mod redirect {
     };
 
     /// Redirect module configuration
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Clone, Debug, Default, Deserialize)]
     #[serde(deny_unknown_fields)]
     pub struct Config {
@@ -123,6 +129,7 @@ pub mod rstatic {
     use super::*;
 
     /// Static response module configuration
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Clone, Debug, Default, Deserialize)]
     #[serde(default, deny_unknown_fields)]
     pub struct Config {
@@ -180,6 +187,7 @@ pub mod fileserver {
     use std::path::PathBuf;
 
     /// File-Server module configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Clone, Debug, Default, Deserialize)]
     #[serde(default, deny_unknown_fields)]
     pub struct Config {
@@ -242,6 +250,7 @@ pub mod rproxy {
     use actix_revproxy::RevProxy;
 
     /// Reverse-Proxy module configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Clone, Debug, Deserialize)]
     #[serde(deny_unknown_fields)]
     pub struct Config {
@@ -327,6 +336,7 @@ pub mod fastcgi {
     use std::path::PathBuf;
 
     /// FastCGI module configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
     #[derive(Clone, Debug, Deserialize)]
     #[serde(deny_unknown_fields)]
     pub struct Config {

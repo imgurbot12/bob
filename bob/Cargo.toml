@@ -12,6 +12,7 @@ fastcgi     = ['bob-cli/fastcgi', 'dep:actix-fastcgi']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
 authn       = ['bob-cli/authn', 'dep:actix-authn', 'dep:actix-session', 'dep:rpassword']
+schema      = ['bob-cli/schema', 'dep:schemars', 'dep:serde_json']
 
 [dependencies]
 actix-authn = { version = "0.1.0", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
@@ -37,7 +38,9 @@ humantime = "2.2.0"
 log = "0.4.27"
 rpassword = { version = "7.4.0", optional = true }
 rustls = "0.23.29"
+schemars = { version = "1.0.4", optional = true }
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.142", optional = true }
 serde_yaml = "0.9.34"
 
 [build-dependencies]

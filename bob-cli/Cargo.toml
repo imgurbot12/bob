@@ -9,9 +9,11 @@ authn      = []
 fileserver = []
 rproxy     = []
 fastcgi    = []
+schema     = ['dep:schemars']
 
 [dependencies]
 actix-http = { version = "3.11.0", default-features = false }
 clap = { version = "4.5.45", features = ["derive"] }
 humantime = "2.2.0"
+schemars = { version = "1.0.4", optional = true }
 serde = { version = "1.0.219", features = ["derive"] }

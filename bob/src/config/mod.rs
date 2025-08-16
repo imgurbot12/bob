@@ -2,6 +2,9 @@
 
 use std::{net::SocketAddr, path::PathBuf, str::FromStr};
 
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
+
 use actix_chain::Chain;
 use actix_web::{guard::Guard, http::header};
 use anyhow::{Context, Result, anyhow};
@@ -28,6 +31,7 @@ pub fn read_config(path: &PathBuf) -> Result<Vec<ServerConfig>> {
 }
 
 /// Server specific configuration settings.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct ServerConfig {
@@ -83,13 +87,28 @@ impl Guard for DomainMatch {
 
 impl FromStr for DomainMatch {
     type Err = glob::PatternError;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let glob = glob::Pattern::new(s)?;
         Ok(Self(glob))
     }
 }
 
+#[cfg(feature = "schema")]
+impl JsonSchema for DomainMatch {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "DomainMatch".into()
+    }
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        concat!(module_path!(), "::DomainMatch").into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({ "type": "string" })
+    }
+}
+
 /// TLS Configuration for server listener.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SSLCfg {
@@ -100,6 +119,7 @@ pub struct SSLCfg {
 }
 
 /// Server listener bindings configuration.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ListenCfg {
@@ -133,6 +153,7 @@ impl From<SocketAddr> for ListenCfg {
 }
 
 /// Module or Middleware Component
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone)]
 pub enum Component {
     Middleware(Middleware),
@@ -167,6 +188,7 @@ impl<'de> Deserialize<'de> for Component {
 }
 
 /// Group of request modules bound to a specific uri path prefix.
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DirectiveCfg {
@@ -193,6 +215,7 @@ impl From<ModuleConfig> for DirectiveCfg {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone)]
 pub struct Components(Vec<Component>);
 
