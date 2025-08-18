@@ -40,6 +40,10 @@ default called `config.yaml`.
 See [`example-config.yaml`](https://github.com/imgurbot12/bob/blob/master/example-config.yaml)
 as a basic reference on how to get started.
 
+### Documentation
+
+Further documentation is available at [here](https://imgurbot12.github.io/bob/).
+
 ### Modules and Middleware
 
 Bob comes with a selection of builtin request processing modules and middleware.
