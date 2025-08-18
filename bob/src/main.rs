@@ -1,3 +1,4 @@
+#![doc = include_str!("../../README.md")]
 #![cfg_attr(feature = "doc", feature(doc_auto_cfg))]
 
 use actix_chain::{Chain, Link};

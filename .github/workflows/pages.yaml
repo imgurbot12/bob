@@ -1,0 +1,56 @@
+name: Build Latest Docs
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build deps
+        run: |
+          sudo apt update
+          sudo apt install -y libmodsecurity-dev
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install schema-to-doc tool
+        run: |
+          python -m pip install --upgrade pip
+          pip install json-schema-for-humans
+      - name: Install nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: Build rust docs
+        run:  cargo +nightly doc --features doc
+      - name: Build schema docs
+        run:  |
+          cd bob
+          cargo +nightly run --features schema -- schema
+          generate-schema-doc schema.json
+          cp -vf schema* ../target/doc/.
+          cd ..
+      - name: Mixin static docs
+        run: cp -vfr bob/doc/* target/doc/.
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
