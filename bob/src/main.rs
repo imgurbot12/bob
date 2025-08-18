@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "doc", feature(doc_auto_cfg))]
+
 use actix_chain::{Chain, Link};
 use actix_web::{App, HttpServer, middleware::Logger};
 use anyhow::{Context, Result};

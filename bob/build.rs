@@ -1,6 +1,7 @@
-use clap_builder::CommandFactory;
+#[cfg(feature = "schema")]
+fn build_mangen() -> std::io::Result<()> {
+    use clap_builder::CommandFactory;
 
-fn main() -> std::io::Result<()> {
     let out_dir =
         std::path::PathBuf::from(std::env::var_os("OUT_DIR").ok_or(std::io::ErrorKind::NotFound)?);
 
@@ -19,6 +20,13 @@ fn main() -> std::io::Result<()> {
         let name = format!("bob-{}.1", subcommand.get_name());
         std::fs::write(out_dir.join(name), buf)?;
     }
+
+    Ok(())
+}
+
+fn main() -> std::io::Result<()> {
+    #[cfg(feature = "schema")]
+    build_mangen()?;
 
     Ok(())
 }

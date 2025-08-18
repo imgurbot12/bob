@@ -12,6 +12,9 @@ fastcgi     = ['bob-cli/fastcgi', 'dep:actix-fastcgi']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
 authn       = ['bob-cli/authn', 'dep:actix-authn', 'dep:actix-session', 'dep:rpassword']
+
+# documentation features
+doc         = []
 schema      = ['bob-cli/schema', 'dep:schemars', 'dep:serde_json']
 
 [dependencies]
@@ -47,4 +50,3 @@ serde_yaml = "0.9.34"
 bob-cli = { version = "0.1.0", path = "../bob-cli" }
 clap_builder = "4.5.44"
 clap_mangen = "0.2.29"
-
