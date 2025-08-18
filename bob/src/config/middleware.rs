@@ -21,6 +21,14 @@ pub enum Middleware {
     #[cfg(feature = "authn")]
     #[serde(alias = "basic_auth_session")]
     AuthSession(auth_session::Config),
+    /// Configuration for [`actix_ipware`] Middleware.
+    #[cfg(feature = "ipware")]
+    #[serde(alias = "ipware")]
+    Ipware(ipware::Config),
+    /// Configuration for [`actix_ip_filter`] Middleware.
+    #[cfg(feature = "ipfilter")]
+    #[serde(alias = "filter")]
+    Ipfilter(ipfilter::Config),
     /// Configuration for [`actix_modsecurity`] Middleware.
     #[cfg(feature = "modsecurity")]
     #[serde(alias = "modsecurity")]
@@ -39,6 +47,10 @@ impl Middleware {
             Self::AuthBasic(config) => config.wrap(wrap, spec),
             #[cfg(feature = "authn")]
             Self::AuthSession(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "ipware")]
+            Self::Ipware(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "ipfilter")]
+            Self::Ipfilter(config) => config.wrap(wrap, spec),
             #[cfg(feature = "modsecurity")]
             Self::ModSecurity(config) => config.wrap(wrap, spec),
             #[cfg(feature = "rewrite")]
@@ -166,6 +178,97 @@ mod auth_session {
                 .session_lifecycle(lifecycle)
                 .build();
             w.wrap_with(self.factory(spec)).wrap_with(session)
+        }
+    }
+}
+
+/// IpWare Client-IP Translation Middleware.
+#[cfg(feature = "ipware")]
+mod ipware {
+    use std::str::FromStr;
+
+    use super::*;
+    use actix_ipware::{IpWare, Middleware};
+    use actix_web::http::header::HeaderName;
+
+    /// IpWare middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
+    #[derive(Debug, Clone, Default, Deserialize)]
+    #[serde(default, deny_unknown_fields)]
+    pub struct Config {
+        /// Allow fake/broken ips in trusted headers if false.
+        ///
+        /// Default is true
+        strict: Option<bool>,
+        /// Trusted headers to parse client IP address from.
+        trusted_headers: Vec<String>,
+        /// Number of expected proxy jumps to be trusted.
+        proxy_count: Option<u16>,
+        /// List of trusted upstream proxy globs.
+        trusted_proxies: Vec<String>,
+        /// Allow untrusted client IP assignments.
+        ///
+        /// Default is false
+        allow_untrusted: bool,
+    }
+
+    impl Config {
+        /// Produce [`actix_ipware::Middleware`] from config.
+        pub fn factory(&self, _spec: &Spec) -> Middleware {
+            let mut ipware = IpWare::empty();
+            self.trusted_headers
+                .iter()
+                .filter_map(|header| HeaderName::from_str(header).ok())
+                .fold(&mut ipware, |ipw, header| ipw.trust_header(header));
+            self.trusted_proxies
+                .iter()
+                .fold(&mut ipware, |ipw, proxy| ipw.trust_proxy(proxy));
+            ipware.proxy_count(self.proxy_count.clone());
+            Middleware::new(ipware)
+                .strict(self.strict.unwrap_or(true))
+                .allow_untrusted(self.allow_untrusted)
+        }
+
+        /// Wrap Chain/Link with configured middleware.
+        pub fn wrap<W: Wrappable>(&self, w: W, spec: &Spec) -> W {
+            w.wrap_with(self.factory(spec))
+        }
+    }
+}
+
+/// IpFilter IP Whitelist/Blacklist Middleware.
+///
+/// It's highly recomended to use this middleware
+/// in conjunction with [`ipware`].
+#[cfg(feature = "ipfilter")]
+mod ipfilter {
+    use super::*;
+    use actix_ip_filter::IPFilter;
+
+    /// IP Filter middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
+    #[derive(Debug, Clone, Default, Deserialize)]
+    #[serde(default, deny_unknown_fields)]
+    pub struct Config {
+        /// Always allowed whitelist of IP Globs.
+        #[serde(alias = "allow")]
+        whitelist: Vec<String>,
+        /// Always denied blacklist of IP Globs.
+        #[serde(alias = "block", alias = "deny")]
+        blacklist: Vec<String>,
+    }
+
+    impl Config {
+        /// Produce [`actix_ip_filter::IPFilter`] from config.
+        pub fn factory(&self, _spec: &Spec) -> IPFilter {
+            IPFilter::new()
+                .allow(self.whitelist.iter().map(|s| s.as_str()).collect())
+                .block(self.blacklist.iter().map(|s| s.as_str()).collect())
+        }
+
+        /// Wrap Chain/Link with configured middleware.
+        pub fn wrap<W: Wrappable>(&self, w: W, spec: &Spec) -> W {
+            w.wrap_with(self.factory(spec))
         }
     }
 }

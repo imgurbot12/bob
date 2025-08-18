@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "actix-authn"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-session",
  "actix-web",
@@ -19,7 +19,7 @@ dependencies = [
 [[package]]
 name = "actix-chain"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -33,7 +33,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f7b0a21988c1bf877cf4759ef5ddaac04c1c9fe808c9142ecb78ba97d97a28a"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "bytes",
  "futures-core",
  "futures-sink",
@@ -47,7 +47,7 @@ dependencies = [
 [[package]]
 name = "actix-fastcgi"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-http",
@@ -76,7 +76,7 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web",
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "bytes",
  "derive_more 2.0.1",
  "futures-core",
@@ -98,7 +98,7 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web",
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "bytes",
  "derive_more 2.0.1",
  "futures-core",
@@ -123,7 +123,7 @@ dependencies = [
  "actix-tls",
  "actix-utils",
  "base64 0.22.1",
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "brotli",
  "bytes",
  "bytestring",
@@ -152,6 +152,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-ip-filter"
+version = "0.3.2"
+source = "git+https://github.com/imgurbot12/actix-ip-filter#97b31e6b7ceb8f59c34ca55e991072793b71550c"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "futures-util",
+ "glob",
+ "ipware",
+]
+
+[[package]]
+name = "actix-ipware"
+version = "0.1.0"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
+dependencies = [
+ "actix-web",
+ "futures-core",
+ "ipware",
+]
+
+[[package]]
 name = "actix-macros"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -164,7 +186,7 @@ dependencies = [
 [[package]]
 name = "actix-modsecurity"
 version = "0.1.2"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-http",
  "actix-service",
@@ -178,7 +200,7 @@ dependencies = [
 [[package]]
 name = "actix-revproxy"
 version = "0.2.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=feat%2Fpathbuf)",
  "actix-service",
@@ -193,7 +215,7 @@ dependencies = [
 [[package]]
 name = "actix-rewrite"
 version = "0.1.1"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-http",
  "actix-service",
@@ -234,7 +256,7 @@ dependencies = [
 [[package]]
 name = "actix-sanitize"
 version = "0.1.0"
-source = "git+https://github.com/imgurbot12/actix-services.git#4256e3f42ffd5289fd9a1a8aa2d0bf281d9bdac3"
+source = "git+https://github.com/imgurbot12/actix-services.git#162190635390c0965de5cd77eefb6f97d5f15e13"
 dependencies = [
  "actix-web",
  "futures-core",
@@ -670,7 +692,7 @@ version = "0.69.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271383c67ccabffb7381723dea0672a673f292304fcb45c01cc648c7a8d58088"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "cexpr",
  "clang-sys",
  "itertools 0.12.1",
@@ -695,9 +717,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.9.1"
+version = "2.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
+checksum = "6a65b545ab31d687cff52899d4890855fec459eb6afe0da6417b8a18da87aa29"
 
 [[package]]
 name = "block-buffer"
@@ -726,6 +748,8 @@ dependencies = [
  "actix-chain",
  "actix-fastcgi",
  "actix-files 0.6.6 (git+https://github.com/imgurbot12/actix-web.git?branch=develop)",
+ "actix-ip-filter",
+ "actix-ipware",
  "actix-modsecurity",
  "actix-revproxy",
  "actix-rewrite",
@@ -766,9 +790,9 @@ dependencies = [
 
 [[package]]
 name = "brotli"
-version = "8.0.1"
+version = "8.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9991eea70ea4f293524138648e41ee89b0b2b12ddef3b255effa43c8056e0e0d"
+checksum = "4bd8b9603c7aa97359dbd97ecf258968c95f3adddd6db2f7e7a5bef101c84560"
 dependencies = [
  "alloc-no-stdlib",
  "alloc-stdlib",
@@ -814,9 +838,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.32"
+version = "1.2.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2352e5597e9c544d5e6d9c95190d5d27738ade584fa8db0a16e130e5c2b5296e"
+checksum = "3ee0f8803222ba5a7e2777dd72ca451868909b1ac410621b676adf07280e9b5f"
 dependencies = [
  "jobserver",
  "libc",
@@ -1613,9 +1637,25 @@ version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "cfg-if",
  "libc",
+]
+
+[[package]]
+name = "ip_rfc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b8a253fc120dd6c624b7beb0a82330fc0135e0a9cec685bf039a07ba032af1e"
+
+[[package]]
+name = "ipware"
+version = "0.3.0"
+source = "git+https://github.com/imgurbot12/ipware#8739e822649bf592459067c29ec162ff54d8d366"
+dependencies = [
+ "actix-http",
+ "glob",
+ "ip_rfc",
 ]
 
 [[package]]
@@ -1840,7 +1880,7 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "regex-automata",
- "thiserror 2.0.14",
+ "thiserror 2.0.15",
  "unicase",
 ]
 
@@ -2055,9 +2095,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.97"
+version = "1.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d61789d7719defeb74ea5fe81f2fdfdbd28a803847077cecce2ff14e1472f6f1"
+checksum = "89ae43fd86e4158d6db51ad8e2b80f313af9cc74f5c0e03ccb87de09998732de"
 dependencies = [
  "unicode-ident",
 ]
@@ -2142,7 +2182,7 @@ version = "0.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5407465600fb0548f1442edf71dd20683c6ed326200ace4b1ef0763521bb3b77"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
 ]
 
 [[package]]
@@ -2259,7 +2299,7 @@ version = "0.38.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
  "errno",
  "libc",
  "linux-raw-sys",
@@ -2535,9 +2575,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "syn"
-version = "2.0.105"
+version = "2.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bc3fcb250e53458e712715cf74285c1f889686520d79294a9ef3bd7aa1fc619"
+checksum = "ede7c438028d4436d71104916910f5bb611972c5cfd7f89b8300a8186e6fada6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2566,11 +2606,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.14"
+version = "2.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b0949c3a6c842cbde3f1686d6eea5a010516deb7085f79db747562d4102f41e"
+checksum = "80d76d3f064b981389ecb4b6b7f45a0bf9fdac1d5b9204c7bd6714fecc302850"
 dependencies = [
- "thiserror-impl 2.0.14",
+ "thiserror-impl 2.0.15",
 ]
 
 [[package]]
@@ -2586,9 +2626,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.14"
+version = "2.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc5b44b4ab9c2fdd0e0512e6bece8388e214c0749f5862b114cc5b7a25daf227"
+checksum = "44d29feb33e986b6ea906bd9c3559a856983f92371b3eaa5e83782a351623de0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3174,7 +3214,7 @@ version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 2.9.2",
 ]
 
 [[package]]

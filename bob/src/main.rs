@@ -52,6 +52,33 @@ use crate::config::{ServerConfig, Spec};
 //TODO: hot-reload option for when config changes?
 //TODO: daemonize option?
 
+#[inline]
+fn logger(config: &ServerConfig) -> Logger {
+    #[cfg(not(feature = "ipware"))]
+    let log = Logger::default();
+
+    #[cfg(feature = "ipware")]
+    let log = match config.logging.use_ipware.unwrap_or(true) {
+        false => Logger::default(),
+        true => Logger::new(r#"%{ip}xo "%r" %s %b "%{Referer}i" "%{User-Agent}i" %T"#)
+            .custom_response_replace("ip", |res| {
+                res.request()
+                    .peer_addr()
+                    .map(|r| r.ip().to_string())
+                    .unwrap_or_default()
+            }),
+    };
+
+    log.log_level(
+        config
+            .logging
+            .log_level
+            .clone()
+            .map(|l| l.0)
+            .unwrap_or(log::Level::Info),
+    )
+}
+
 /// Assemble [`actix_chain::Chain`] from server configuration instance.
 fn assemble_chain(config: &ServerConfig) -> Chain {
     let mut chain = Chain::default();
@@ -82,8 +109,8 @@ fn assemble_chain(config: &ServerConfig) -> Chain {
     if config.sanitize_errors.unwrap_or(true) {
         chain = chain.wrap(actix_sanitize::Sanitizer::default());
     }
-    if config.log_requests.unwrap_or(true) {
-        chain = chain.wrap(Logger::default());
+    if !config.logging.disable {
+        chain = chain.wrap(logger(config));
     }
 
     chain

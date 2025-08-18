@@ -33,7 +33,7 @@ pub fn build_config(cli: Cli) -> Result<Config> {
     }?;
     config.iter_mut().for_each(|config| {
         config.sanitize_errors = config.sanitize_errors.or(cli.sanitize);
-        config.log_requests = cli.log;
+        config.logging.disable = cli.log.map(|b| !b).unwrap_or_default();
     });
     Ok(config)
 }

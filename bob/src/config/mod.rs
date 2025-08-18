@@ -39,6 +39,8 @@ pub struct ServerConfig {
     pub disable: bool,
     /// List of configurations for binding server addresses.
     pub listen: Vec<ListenCfg>,
+    /// Configuration settings for logging.
+    pub logging: LoggingCfg,
     /// List of domain-names matchers with the server.
     ///
     /// Once registered, the server will only respond to
@@ -56,14 +58,52 @@ pub struct ServerConfig {
     pub index: Vec<String>,
     /// Default maximum buffer-size when reading messages into memory.
     pub body_buffer_size: Option<usize>,
-    /// Request logging toggle.
-    ///
-    /// Default is true
-    pub log_requests: Option<bool>,
     /// Sanitizes error-messages produced by configured modules when enabled.
     ///
     /// Default is true
     pub sanitize_errors: Option<bool>,
+}
+
+#[derive(Clone, Debug)]
+pub struct LogLevel(pub log::Level);
+
+#[cfg(feature = "schema")]
+impl JsonSchema for LogLevel {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "LogLevel".into()
+    }
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        concat!(module_path!(), "::LogLevel").into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({ "type": "string" })
+    }
+}
+
+impl FromStr for LogLevel {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(Self(log::Level::from_str(s)?))
+    }
+}
+
+/// Logging Configuration settings
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct LoggingCfg {
+    /// Disable logging if set to true
+    pub disable: bool,
+    /// Logging level attached to log.
+    ///
+    /// Default is INFO
+    pub log_level: Option<LogLevel>,
+    /// Use IpWare Middleware RealIP if enabled.
+    ///
+    /// Default is true
+    #[cfg(feature = "ipware")]
+    pub use_ipware: Option<bool>,
 }
 
 /// Compilation of references to config specifications
@@ -251,6 +291,7 @@ impl<'de> Deserialize<'de> for Components {
 }
 
 de_fromstr!(DomainMatch);
+de_fromstr!(LogLevel);
 
 /// Return option or generate default duration from seconds
 #[inline]
