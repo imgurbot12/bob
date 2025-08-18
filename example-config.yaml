@@ -3,11 +3,26 @@
     - port: 8080
       host: localhost
 
+  # bob will only respond when client specifies `Host: example.com`
   server_name: ['example.com']
+
+  # sometimes u dont want to allow error outputs in production
+  sanitize_errors: false
+
+  # example modsecurity middleware for entire server-config
+  middleware:
+    - middleware: modsecurity
+      rules: |
+        SecRuleEngine On
+        SecRule REQUEST_URI "@rx admin" "id:1,phase:1,deny,status:401"
 
   directives:
     - location: /
-      modules:
+      construct:
+        # first module is a fileserver
         - module: fileserver
+          next:   [404, 405] # 404/405 are the default
+
+        # reverse-proxy (called if fileserver returns 404/405)
         - module: rproxy
-          resolve: http://example.com
+          resolve: https://example.com

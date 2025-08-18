@@ -78,6 +78,7 @@ impl ModuleConfig {
     }
 }
 
+/// Simple HTTP redirect module
 pub mod redirect {
     use super::*;
 
@@ -121,6 +122,7 @@ pub mod redirect {
     }
 }
 
+/// Simple static response module
 pub mod rstatic {
     use std::collections::BTreeMap;
 
@@ -179,6 +181,7 @@ pub mod rstatic {
     }
 }
 
+/// Fileserver module
 #[cfg(feature = "fileserver")]
 pub mod fileserver {
     use super::*;
@@ -239,6 +242,7 @@ pub mod fileserver {
     }
 }
 
+/// ReverseProxy module
 #[cfg(feature = "rproxy")]
 pub mod rproxy {
     use std::{collections::BTreeMap, sync::Arc};
@@ -328,6 +332,7 @@ pub mod rproxy {
     }
 }
 
+/// FastCGI module
 #[cfg(feature = "fastcgi")]
 pub mod fastcgi {
     use super::*;

@@ -1,3 +1,5 @@
+//! TLS "Server Name Indication" (SNI)
+
 use std::{path::PathBuf, sync::Arc};
 
 use crate::config::{DomainMatch, ServerConfig};
@@ -9,6 +11,7 @@ use rustls::{
     sign::CertifiedKey,
 };
 
+/// Build SNI Server Configuration
 #[inline]
 pub(crate) fn build_tls_config(config: &[ServerConfig]) -> Result<rustls::ServerConfig> {
     let resolver = TlsResolver::new(config)?;
@@ -17,6 +20,7 @@ pub(crate) fn build_tls_config(config: &[ServerConfig]) -> Result<rustls::Server
         .with_cert_resolver(Arc::new(resolver)))
 }
 
+/// Generate [`CertifiedKey`] from Cert/PrivKey files
 #[inline]
 fn certified_key(certs: &PathBuf, key: &PathBuf) -> Result<Arc<CertifiedKey>> {
     let certs: Vec<CertificateDer> = CertificateDer::pem_file_iter(certs)
@@ -31,6 +35,7 @@ fn certified_key(certs: &PathBuf, key: &PathBuf) -> Result<Arc<CertifiedKey>> {
     }))
 }
 
+/// Individual [`ServerConfig`] TLS Configuration
 #[derive(Debug)]
 struct TlsEntry {
     domains: Vec<DomainMatch>,
@@ -48,6 +53,7 @@ impl TlsEntry {
     }
 }
 
+/// Global TLS SNI configuration controls
 #[derive(Debug)]
 pub struct TlsResolver(Vec<TlsEntry>);
 

@@ -1,3 +1,5 @@
+//! Middleware Configuration
+
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 
@@ -6,6 +8,7 @@ use serde::Deserialize;
 
 use super::Spec;
 
+/// Middleware configuration for request processing.
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "middleware", deny_unknown_fields)]
@@ -44,6 +47,7 @@ impl Middleware {
     }
 }
 
+/// HTTP Basic Authorization Middleware
 #[cfg(feature = "authn")]
 mod auth_basic {
     use std::{fmt::Debug, path::PathBuf};
@@ -83,6 +87,7 @@ mod auth_basic {
     }
 }
 
+/// HTTP Basic Authorization with Cookie Session Middleware
 #[cfg(feature = "authn")]
 mod auth_session {
     use std::{fmt::Debug, path::PathBuf};
@@ -165,6 +170,7 @@ mod auth_session {
     }
 }
 
+/// OWASP ModSecurity Middleware
 #[cfg(feature = "modsecurity")]
 mod modsecurity {
     use std::path::PathBuf;
@@ -211,6 +217,7 @@ mod modsecurity {
     }
 }
 
+/// Apache2 Inspired `mod_rewrite` module
 #[cfg(feature = "rewrite")]
 mod rewrite {
     use std::path::PathBuf;

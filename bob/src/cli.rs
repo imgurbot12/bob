@@ -1,9 +1,12 @@
+//! CLI actions and [`Config`] compilation
+
 use anyhow::{Context, Result};
 use bob_cli::*;
 
 use crate::config::modules::*;
 use crate::config::*;
 
+/// Compilation of [`ServerConfig`] instances
 pub type Config = Vec<ServerConfig>;
 
 macro_rules! run_and_exit {
@@ -35,10 +38,12 @@ pub fn build_config(cli: Cli) -> Result<Config> {
     Ok(config)
 }
 
+/// Read config specified in [`RunCmd`]
 fn run_cmd(cmd: RunCmd) -> Result<Config> {
     read_config(&cmd.config)
 }
 
+/// Convert string into [`Vec<ListenCfg>`]
 #[cfg(any(feature = "fileserver", feature = "rproxy"))]
 #[inline]
 fn convert_addr(addr: &str) -> Result<Vec<ListenCfg>> {
@@ -46,6 +51,7 @@ fn convert_addr(addr: &str) -> Result<Vec<ListenCfg>> {
     Ok(addr.to_socket_addrs()?.map(|addr| addr.into()).collect())
 }
 
+/// Run password hash generation and exit.
 #[cfg(feature = "authn")]
 fn execute_passwd(cmd: GenPasswdCmd) -> Result<()> {
     use actix_authn::basic::crypt::bcrypt;
@@ -77,6 +83,7 @@ fn execute_passwd(cmd: GenPasswdCmd) -> Result<()> {
     Ok(())
 }
 
+/// Build JSON schema for configuration
 #[cfg(feature = "schema")]
 fn build_schema(cmd: SchemaCmd) -> Result<()> {
     use std::io::Write;
@@ -88,6 +95,7 @@ fn build_schema(cmd: SchemaCmd) -> Result<()> {
     Ok(())
 }
 
+/// Fileserver config generation
 #[cfg(feature = "fileserver")]
 fn fileserver_cmd(cmd: FileServerCmd) -> Result<Config> {
     Ok(vec![ServerConfig {
@@ -106,6 +114,7 @@ fn fileserver_cmd(cmd: FileServerCmd) -> Result<Config> {
     }])
 }
 
+/// FastCGI config generation
 #[cfg(feature = "fastcgi")]
 fn fastcgi_cmd(cmd: FastCgiCmd) -> Result<Config> {
     Ok(vec![ServerConfig {
@@ -123,6 +132,7 @@ fn fastcgi_cmd(cmd: FastCgiCmd) -> Result<Config> {
     }])
 }
 
+/// Reverse-Proxy config generation
 #[cfg(feature = "rproxy")]
 fn rproxy_cmd(cmd: RevProxyCmd) -> Result<Config> {
     let downstream = cmd.header_down.into_iter().map(|h| (h.0, h.1)).collect();

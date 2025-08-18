@@ -1,3 +1,5 @@
+//! TLS Client Certificate Validation Utils
+
 use std::sync::Arc;
 
 use actix_tls::connect::rustls_0_23::webpki_roots_cert_store;

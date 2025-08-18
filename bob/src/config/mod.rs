@@ -66,6 +66,7 @@ pub struct ServerConfig {
     pub sanitize_errors: Option<bool>,
 }
 
+/// Compilation of references to config specifications
 pub struct Spec<'a> {
     pub config: &'a ServerConfig,
 }
@@ -251,6 +252,7 @@ impl<'de> Deserialize<'de> for Components {
 
 de_fromstr!(DomainMatch);
 
+/// Return option or generate default duration from seconds
 #[inline]
 pub fn default_duration(d: &Option<Duration>, default_secs: u64) -> std::time::Duration {
     d.as_ref()
