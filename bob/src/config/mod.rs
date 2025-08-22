@@ -64,6 +64,7 @@ pub struct ServerConfig {
     pub sanitize_errors: Option<bool>,
 }
 
+/// Logging level configuration
 #[derive(Clone, Debug)]
 pub struct LogLevel(pub log::Level);
 

@@ -12,12 +12,13 @@ rproxy      = ['bob-cli/rproxy', 'dep:actix-revproxy', 'dep:awc']
 fastcgi     = ['bob-cli/fastcgi', 'dep:actix-fastcgi']
 
 # middleware features
-middleware  = ['authn', 'modsecurity', 'rewrite', 'ipware', 'ipfilter']
+middleware  = ['authn', 'modsecurity', 'rewrite', 'ipware', 'ipfilter', 'timeout']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
 authn       = ['bob-cli/authn', 'dep:actix-authn', 'dep:actix-session', 'dep:rpassword']
 ipware      = ['dep:actix-ipware']
 ipfilter    = ['dep:actix-ip-filter']
+timeout     = ['dep:actix-timeout']
 
 # documentation features
 doc         = []
@@ -34,8 +35,8 @@ actix-modsecurity = { version = "0.1.2", optional = true, git = "https://github.
 actix-revproxy = { version = "0.2.0", optional = true, features = ["rustls-0_23"], git = "https://github.com/imgurbot12/actix-services.git" }
 actix-rewrite = { version = "0.1.1", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-sanitize = { version = "0.1.0", git = "https://github.com/imgurbot12/actix-services.git" }
-actix-service = "2.0.3"
 actix-session = { version = "0.10.1", optional = true, features = ["cookie-session"] }
+actix-timeout = { git = "https://github.com/imgurbot12/actix-services.git", version = "0.1.0", optional = true }
 actix-tls = { version = "3.4.0", features = ["rustls-0_23-webpki-roots"] }
 actix-web = { version = "4.11.0", features = ["experimental-io-uring", "rustls-0_23"] }
 anyhow = "1.0.98"
@@ -43,9 +44,7 @@ awc = { version = "3.7.0", optional = true, git = "https://github.com/imgurbot12
 bob-cli = { version = "0.1.0", path = "../bob-cli", default-features = false }
 clap = { version = "4.5.41", features = ["derive"] }
 env_logger = "0.11.8"
-futures-core = { version = "0.3.31", default-features = false }
 glob = "0.3.2"
-humantime = "2.2.0"
 log = "0.4.27"
 rpassword = { version = "7.4.0", optional = true }
 rustls = "0.23.29"

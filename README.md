@@ -60,9 +60,12 @@ Bob comes with a selection of builtin request processing modules and middleware.
 
 ##### Middleware
 
-| Name        | Description                               |
-| :---------: | :---------------------------------------- |
-| AuthBasic   | HTTP BasicAuth                            |
-| AuthSession | HTTP BasicAuth with Cookie Session        |
-| ModSecurity | OWASP Modsecurity WAF Integration         |
-| Rewrite     | Apache2 `mod_rewrite` inspired middleware |
+| Name        | Description                                 |
+| :---------: | :------------------------------------------ |
+| AuthBasic   | HTTP BasicAuth                              |
+| AuthSession | HTTP BasicAuth with Cookie Session          |
+| ModSecurity | OWASP Modsecurity WAF Integration           |
+| Rewrite     | Apache2 `mod_rewrite` inspired middleware   |
+| IpWare      | Determines best guess for client IP address |
+| Filter      | IPAddress filter (Whitelist/Blacklist)      |
+| Timeout     | Basic operation timeout middleware          |

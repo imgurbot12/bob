@@ -37,6 +37,10 @@ pub enum Middleware {
     #[cfg(feature = "rewrite")]
     #[serde(alias = "rewrite")]
     Rewrite(rewrite::Config),
+    /// Configuration for [`actix_timeout`] Middleware
+    #[cfg(feature = "timeout")]
+    #[serde(alias = "timeout")]
+    Timeout(timeout::Config),
 }
 
 impl Middleware {
@@ -55,6 +59,8 @@ impl Middleware {
             Self::ModSecurity(config) => config.wrap(wrap, spec),
             #[cfg(feature = "rewrite")]
             Self::Rewrite(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "timeout")]
+            Self::Timeout(config) => config.wrap(wrap, spec),
         }
     }
 }
@@ -368,6 +374,35 @@ mod rewrite {
                 .try_fold(rewrite, |rw, path| rw.rules_file(path))
                 .expect("failed to load rules file")
                 .middleware()
+        }
+
+        /// Wrap Chain/Link with configured middleware.
+        pub fn wrap<W: Wrappable>(&self, w: W, spec: &Spec) -> W {
+            w.wrap_with(self.factory(spec))
+        }
+    }
+}
+
+/// Processing Timeout Middleware.
+#[cfg(feature = "timeout")]
+mod timeout {
+
+    use super::*;
+    use actix_timeout::Timeout;
+
+    /// Timeout middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
+    #[derive(Debug, Clone, Default, Deserialize)]
+    #[serde(default, deny_unknown_fields)]
+    pub struct Config {
+        /// Timeout duration in miliseconds
+        duration: u64,
+    }
+
+    impl Config {
+        /// Produce [`actix_timeout::Timeout`] from config.
+        pub fn factory(&self, _spec: &Spec) -> Timeout {
+            Timeout::from_millis(self.duration)
         }
 
         /// Wrap Chain/Link with configured middleware.
