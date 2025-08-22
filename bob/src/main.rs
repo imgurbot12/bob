@@ -28,7 +28,6 @@ use crate::config::{ServerConfig, Spec};
 //TODO: look into logging configuration for config,
 // but also to see if u can speed up operations to avoid slowdown.
 
-//TODO: ratelimitter middleware
 //TODO: simple bot detector/challenger system? - anubis lite
 //TODO: configurable static-response module
 // (status, headers, body)

@@ -26,7 +26,7 @@ jobs:
       - name: Install nightly
         uses: dtolnay/rust-toolchain@nightly
       - name: Build rust docs
-        run:  cargo +nightly doc --features doc
+        run:  cargo +nightly doc --features doc --no-deps
       - name: Build schema docs
         run:  |
           cd bob

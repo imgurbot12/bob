@@ -37,6 +37,10 @@ pub enum Middleware {
     #[cfg(feature = "rewrite")]
     #[serde(alias = "rewrite")]
     Rewrite(rewrite::Config),
+    /// Configuration for [`actix_extensible_rate_limit`] Middleware
+    #[cfg(feature = "ratelimit")]
+    #[serde(alias = "ratelimit")]
+    Ratelimit(ratelimit::Config),
     /// Configuration for [`actix_timeout`] Middleware
     #[cfg(feature = "timeout")]
     #[serde(alias = "timeout")]
@@ -59,6 +63,8 @@ impl Middleware {
             Self::ModSecurity(config) => config.wrap(wrap, spec),
             #[cfg(feature = "rewrite")]
             Self::Rewrite(config) => config.wrap(wrap, spec),
+            #[cfg(feature = "ratelimit")]
+            Self::Ratelimit(config) => config.wrap(wrap, spec),
             #[cfg(feature = "timeout")]
             Self::Timeout(config) => config.wrap(wrap, spec),
         }
@@ -143,6 +149,8 @@ mod auth_session {
         /// Cookie name associated with session.
         cookie_name: Option<String>,
         /// Cache size linked to authentication lookup
+        ///
+        /// Default is u16::MAX
         cache_size: Option<usize>,
 
         // global initialization for cookie-key via config.
@@ -379,6 +387,95 @@ mod rewrite {
         /// Wrap Chain/Link with configured middleware.
         pub fn wrap<W: Wrappable>(&self, w: W, spec: &Spec) -> W {
             w.wrap_with(self.factory(spec))
+        }
+    }
+}
+
+/// Ratelimitting controls middleware.
+#[cfg(feature = "ratelimit")]
+mod ratelimit {
+    use std::fmt::Debug;
+
+    use super::*;
+    use crate::config::default_duration;
+
+    use actix_extensible_rate_limit::{
+        RateLimiter,
+        backend::{SimpleInputFunctionBuilder, memory::InMemoryBackend},
+    };
+    use bob_cli::Duration;
+
+    /// Derivation wrapper around [`InMemoryBackend`]
+    #[derive(Clone)]
+    struct MemoryBackend(InMemoryBackend);
+
+    impl Debug for MemoryBackend {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "MemoryBackend {{}}")
+        }
+    }
+
+    impl Default for MemoryBackend {
+        fn default() -> Self {
+            Self(InMemoryBackend::builder().build())
+        }
+    }
+
+    /// Ratelimitter middleware configuration.
+    #[cfg_attr(feature = "schema", derive(JsonSchema))]
+    #[derive(Debug, Clone, Default, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub struct Config {
+        /// Request limit
+        limit: u64,
+        /// Ratelimit control period
+        ///
+        /// Default is 1s
+        #[serde(default)]
+        period: Option<Duration>,
+        /// Discriminate ratelimit by IP and Path if enabled
+        ///
+        /// Default is false
+        #[serde(default)]
+        use_path: bool,
+        /// Allow request by default if backend fails to respond in time
+        ///
+        /// Default is false
+        #[serde(default)]
+        fail_open: bool,
+        /// Include ratelimit explanation headers if enabled
+        ///
+        /// Default is false
+        #[serde(default)]
+        response_headers: bool,
+
+        // global initialization for ratelimit backend.
+        // avoids recreating the backend for every worker actix-web creates.
+        #[serde(default, skip)]
+        backend: MemoryBackend,
+    }
+
+    impl Config {
+        // ratelimiter generics make it annoying to export as a type
+        // from a function cause they cause type errors when passing it
+        // into `wrap_with`. instead we go directly to wrap with builder
+        // to avoid that nonsense.
+
+        /// Wrap Chain/Link with configured middleware.
+        pub fn wrap<W: Wrappable>(&self, w: W, _spec: &Spec) -> W {
+            let period = default_duration(&self.period, 1);
+            let mut input = SimpleInputFunctionBuilder::new(period, self.limit).peer_ip_key();
+            if self.use_path {
+                input = input.path_key();
+            }
+
+            let mut middleware = RateLimiter::builder(self.backend.0.clone(), input.build())
+                .fail_open(self.fail_open);
+            if self.response_headers {
+                middleware = middleware.add_headers();
+            }
+
+            w.wrap_with(middleware.build())
         }
     }
 }

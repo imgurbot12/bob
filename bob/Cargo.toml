@@ -12,21 +12,23 @@ rproxy      = ['bob-cli/rproxy', 'dep:actix-revproxy', 'dep:awc']
 fastcgi     = ['bob-cli/fastcgi', 'dep:actix-fastcgi']
 
 # middleware features
-middleware  = ['authn', 'modsecurity', 'rewrite', 'ipware', 'ipfilter', 'timeout']
+middleware  = ['authn', 'modsecurity', 'rewrite', 'ipware', 'ipfilter', 'ratelimit', 'timeout']
 modsecurity = ['dep:actix-modsecurity']
 rewrite     = ['dep:actix-rewrite']
 authn       = ['bob-cli/authn', 'dep:actix-authn', 'dep:actix-session', 'dep:rpassword']
 ipware      = ['dep:actix-ipware']
 ipfilter    = ['dep:actix-ip-filter']
+ratelimit   = ['dep:actix-extensible-rate-limit']
 timeout     = ['dep:actix-timeout']
 
 # documentation features
-doc         = []
-schema      = ['bob-cli/schema', 'dep:schemars', 'dep:serde_json']
+doc    = []
+schema = ['bob-cli/schema', 'dep:schemars', 'dep:serde_json']
 
 [dependencies]
 actix-authn = { version = "0.1.0", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-chain = { version = "0.1.0", git = "https://github.com/imgurbot12/actix-services.git" }
+actix-extensible-rate-limit = { version = "0.4.0", optional = true }
 actix-fastcgi = { version = "0.1.0", optional = true, git = "https://github.com/imgurbot12/actix-services.git" }
 actix-files = { version = "0.6.6", git = "https://github.com/imgurbot12/actix-web.git", branch = "develop", optional = true }
 actix-ip-filter = { version = "0.3.2", optional = true, git = "https://github.com/imgurbot12/actix-ip-filter" }

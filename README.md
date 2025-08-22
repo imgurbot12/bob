@@ -68,4 +68,5 @@ Bob comes with a selection of builtin request processing modules and middleware.
 | Rewrite     | Apache2 `mod_rewrite` inspired middleware   |
 | IpWare      | Determines best guess for client IP address |
 | Filter      | IPAddress filter (Whitelist/Blacklist)      |
+| Ratelimit   | Configurable request ratelimit middleware   |
 | Timeout     | Basic operation timeout middleware          |
