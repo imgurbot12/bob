@@ -12,25 +12,7 @@ mod tls;
 
 use crate::config::{ServerConfig, Spec};
 
-//TODO: existing logging middleware does not log errors.
-// look into alternatives or make a PR?
-// https://github.com/actix/actix-web/issues/1051
-
-//TODO: integrate ipware directly as real-ip extractor?
-// can u overwrite remote-addr in service?
-//
-// would it be better to use the `extra_data` method?
-// (that would likely require a feature for all services to support)
-
-//TODO: confirm fastcgi has its own timeout (allow config??)
-//TODO: confirm rev-proxy has its own timeout (allow config.)
-
-//TODO: look into logging configuration for config,
-// but also to see if u can speed up operations to avoid slowdown.
-
 //TODO: simple bot detector/challenger system? - anubis lite
-//TODO: configurable static-response module
-// (status, headers, body)
 
 //TODO: metrics/healthcheck module
 // (with configurable secure access)

@@ -98,6 +98,10 @@ fn build_schema(cmd: SchemaCmd) -> Result<()> {
 /// Fileserver config generation
 #[cfg(feature = "fileserver")]
 fn fileserver_cmd(cmd: FileServerCmd) -> Result<Config> {
+    if cmd.open {
+        let _ = open::that(format!("http://{}", cmd.listen))
+            .inspect_err(|err| log::error!("failed to open browser: {err:?}"));
+    }
     Ok(vec![ServerConfig {
         index: cmd.index,
         listen: convert_addr(&cmd.listen).context("invalid listen address")?,
@@ -135,6 +139,10 @@ fn fastcgi_cmd(cmd: FastCgiCmd) -> Result<Config> {
 /// Reverse-Proxy config generation
 #[cfg(feature = "rproxy")]
 fn rproxy_cmd(cmd: RevProxyCmd) -> Result<Config> {
+    if cmd.open {
+        let _ = open::that(format!("http://{}", cmd.from))
+            .inspect_err(|err| log::error!("failed to open browser: {err:?}"));
+    }
     let downstream = cmd.header_down.into_iter().map(|h| (h.0, h.1)).collect();
     let upstream = cmd.header_up.into_iter().map(|h| (h.0, h.1)).collect();
     Ok(vec![ServerConfig {

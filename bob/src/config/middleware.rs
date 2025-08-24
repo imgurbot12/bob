@@ -237,7 +237,7 @@ mod ipware {
             self.trusted_proxies
                 .iter()
                 .fold(&mut ipware, |ipw, proxy| ipw.trust_proxy(proxy));
-            ipware.proxy_count(self.proxy_count.clone());
+            ipware.proxy_count(self.proxy_count);
             Middleware::new(ipware)
                 .strict(self.strict.unwrap_or(true))
                 .allow_untrusted(self.allow_untrusted)

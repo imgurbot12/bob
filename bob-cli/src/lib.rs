@@ -119,6 +119,9 @@ pub struct FileServerCmd {
     /// Show hidden files if enabled
     #[clap(short, long)]
     pub show_hidden: bool,
+    /// Open server in browser
+    #[clap(long)]
+    pub open: bool,
 }
 
 #[cfg(feature = "rproxy")]
@@ -145,6 +148,9 @@ pub struct RevProxyCmd {
     /// Set a request header for upstream
     #[clap(short = 'u', long)]
     pub header_up: Vec<Header>,
+    /// Open server in browser
+    #[clap(long)]
+    pub open: bool,
 }
 
 /// Header key/value pair parsed from a string
