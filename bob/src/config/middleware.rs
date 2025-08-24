@@ -270,6 +270,11 @@ mod ipfilter {
         /// Always denied blacklist of IP Globs.
         #[serde(alias = "block", alias = "deny")]
         blacklist: Vec<String>,
+        /// Path globs to specifically include for protection.
+        #[serde(alias = "include", alias = "limit")]
+        protect: Vec<String>,
+        /// Paths globs to specifically exclude from protection.
+        exclude: Vec<String>,
     }
 
     impl Config {
@@ -278,6 +283,8 @@ mod ipfilter {
             IPFilter::new()
                 .allow(self.whitelist.iter().map(|s| s.as_str()).collect())
                 .block(self.blacklist.iter().map(|s| s.as_str()).collect())
+                .limit_to(self.protect.iter().map(|s| s.as_str()).collect())
+                .exclude_from(self.exclude.iter().map(|s| s.as_str()).collect())
         }
 
         /// Wrap Chain/Link with configured middleware.
