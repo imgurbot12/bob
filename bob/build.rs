@@ -24,9 +24,33 @@ fn build_mangen() -> std::io::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "doc")]
+fn add_docs_imgs() {
+    use std::path::PathBuf;
+
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").expect("missing cargo manifest env");
+    let docs = PathBuf::from(&crate_dir)
+        .join("..")
+        .join("target")
+        .join("doc")
+        .canonicalize()
+        .expect("invalid docs path");
+    let imgs = docs.join("img");
+
+    let logo = PathBuf::from(&crate_dir)
+        .join("doc")
+        .join("img")
+        .join("logo.png");
+    std::fs::create_dir_all(&imgs).expect("failed to make docs images dir");
+    std::fs::copy(logo, imgs.join("logo.png")).expect("failed to copy image");
+}
+
 fn main() -> std::io::Result<()> {
     #[cfg(feature = "schema")]
     build_mangen()?;
+
+    #[cfg(feature = "doc")]
+    add_docs_imgs();
 
     Ok(())
 }

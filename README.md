@@ -1,5 +1,8 @@
 <div align="center">
-  <img src="./bob/doc/img/logo.png" width="256" height="256" />
+  <img
+    src="./bob/doc/img/logo.png"
+    onerror="this.onerror=null; this.src='../img/logo.png'"
+    width="256" height="256" />
   <h1>Bob</h1>
   <p>
     <strong>Bob is an Easy to use Web Server and Reverse Proxy Service</strong>
