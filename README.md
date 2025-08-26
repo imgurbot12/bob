@@ -1,10 +1,19 @@
-bob
-----
+<div align="center">
+  <img src="./bob/doc/img/logo.png" width="256" height="256" />
+  <h1>Bob</h1>
+  <p>
+    <strong>Bob is an Easy to use Web Server and Reverse Proxy Service</strong>
+  </p>
 
-Bob is an Easy to use Web Server and Reverse Proxy Service
+</div>
+
+### Why Bob?
 
 Why is it called Bob? I have no idea what else to call it for now.
 _Bob gets the job done._
+
+Why should you use it? Bob is a single easy-to-use binary, feature-rich,
+and _fast_ thanks to [actix-web](https://actix.rs/).
 
 ### Features
 
@@ -42,7 +51,7 @@ as a basic reference on how to get started.
 
 ### Documentation
 
-Further documentation is available at [here](https://imgurbot12.github.io/bob/).
+Further documentation is available [here](https://imgurbot12.github.io/bob/).
 
 ### Modules and Middleware
 
