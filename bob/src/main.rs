@@ -1,5 +1,5 @@
 #![doc = include_str!("../../README.md")]
-#![cfg_attr(feature = "doc", feature(doc_auto_cfg))]
+#![cfg_attr(feature = "doc", feature(doc_cfg))]
 
 use actix_chain::{Chain, Link};
 use actix_web::{App, HttpServer, middleware::Logger};
