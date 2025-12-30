@@ -49,8 +49,9 @@ $ bob --help
 
 Bob will try and run the server using a yaml configuration by
 default called `config.yaml`.
-See [`example-config.yaml`](https://github.com/imgurbot12/bob/blob/master/example-config.yaml)
-as a basic reference on how to get started.
+
+See [`examples`](https://github.com/imgurbot12/bob/blob/master/docs/06-examples.md) for
+specific base use-cases.
 
 ### Documentation
 
